@@ -33,6 +33,10 @@ jobs:
       - name: Fetch public data
         # Falls back to the currently published file for any source that fails.
         run: python ingest/fetch.py --out web/data --fallback-url "${{ steps.pages.outputs.base_url }}/data"
+        env:
+          # Farm sensors via The Things Network; unset until hardware is deployed.
+          TTN_APP_ID: ${{ vars.TTN_APP_ID }}
+          TTN_API_KEY: ${{ secrets.TTN_API_KEY }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

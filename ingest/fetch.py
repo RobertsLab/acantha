@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import SITE  # noqa: E402
-from sources import doh, nws, sun, tides, water  # noqa: E402
+from sources import doh, nws, sensors, sun, tides, water  # noqa: E402
 from sources.common import iso, utcnow  # noqa: E402
 
 SOURCES = {
@@ -32,7 +32,11 @@ SOURCES = {
     "observations": nws.observations,
     "shellfish": doh.fetch,
     "water": water.fetch,
+    "sensors": sensors.fetch,  # after tides: uses tides.json to flag low-tide exposure
 }
+
+# Sources that take a Context argument (previous output, other sources' output).
+WITH_CONTEXT = {"sensors"}
 
 
 def load_fallback(base: str, name: str):
@@ -41,6 +45,23 @@ def load_fallback(base: str, name: str):
             return json.load(r)
     except Exception:
         return None
+
+
+class Context:
+    """Lets a source read its previously published output and files written earlier in this run."""
+
+    def __init__(self, out: Path, fallback_url: str | None):
+        self.out, self.fallback_url = out, fallback_url
+
+    def current(self, name: str):
+        p = self.out / f"{name}.json"
+        return json.loads(p.read_text()) if p.exists() else None
+
+    def previous(self, name: str):
+        cur = self.current(name)
+        if cur is not None or not self.fallback_url:
+            return cur
+        return load_fallback(self.fallback_url, name)
 
 
 def main() -> int:
@@ -59,12 +80,13 @@ def main() -> int:
         prev_meta = (load_fallback(args.fallback_url, "meta") or {}).get("sources", {})
 
     status = dict(prev_meta)
+    ctx = Context(out, args.fallback_url)
     for name, fn in SOURCES.items():
         if args.only and name not in args.only:
             continue
         t0 = time.time()
         try:
-            data = fn()
+            data = fn(ctx) if name in WITH_CONTEXT else fn()
             data["fetched_at"] = iso(utcnow())
             (out / f"{name}.json").write_text(json.dumps(data, separators=(",", ":")))
             status[name] = {"ok": True, "fetched_at": data["fetched_at"],

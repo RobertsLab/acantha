@@ -177,3 +177,57 @@ export function sourceBadge(meta, key) {
   return el("span", { class: cls, title: s.error || "" }, s.ok ? `updated ${ago(s.fetched_at)}` :
     `source error · last good ${ago(s.fetched_at)}`);
 }
+
+// ---------- farm sensors ----------
+const SENSOR_SERIES = ["--series-1", "--series-2", "--series-3", "--accent-2"];
+
+// uPlot plugin: shade time when a sensor's probe was out of the water.
+function exposedShade(xs, exposed) {
+  return {
+    hooks: {
+      drawClear: (u) => {
+        const { ctx, bbox } = u;
+        ctx.save();
+        ctx.fillStyle = cssVar("--accent-2") + "26";
+        let start = null;
+        for (let i = 0; i <= xs.length; i++) {
+          const on = i < xs.length && exposed[i];
+          if (on && start == null) start = xs[i];
+          if (!on && start != null) {
+            const a = Math.max(u.valToPos(start, "x", true), bbox.left);
+            const b = Math.min(u.valToPos(xs[i - 1], "x", true), bbox.left + bbox.width);
+            if (b > a) ctx.fillRect(a, bbox.top, b - a, bbox.height);
+            start = null;
+          }
+        }
+        ctx.restore();
+      },
+    },
+  };
+}
+
+// Temperature (°F) chart for one or more farm sensors over the last `hours`.
+// Readings that failed QC are dropped; gaps in reporting show as breaks in the line.
+// With a single station, time out of the water is shaded.
+export function sensorChart(box, stations, { hours = 72, width, height = 160, legend = true, sun } = {}) {
+  const since = Date.now() - hours * 3600e3;
+  const rows = stations.map((s) => new Map((s.series || [])
+    .filter((r) => toDate(r.t) >= since).map((r) => [toDate(r.t) / 1e3, r])));
+  const xs = [...new Set(rows.flatMap((m) => [...m.keys()]))].sort((a, b) => a - b);
+  box.replaceChildren();
+  if (!xs.length) return box.append(el("p", { class: "muted small" }, "No readings in this period."));
+  const ys = rows.map((m) => xs.map((x) => { const r = m.get(x); return r && r.qc !== 4 ? r.temp_f : null; }));
+  const plugins = [nowLine()];
+  if (sun) plugins.unshift(nightShade(sun));
+  if (stations.length === 1) plugins.unshift(exposedShade(xs, xs.map((x) => rows[0].get(x)?.exposed)));
+  const ink = cssVar("--muted"), grid = cssVar("--line");
+  const ax = { stroke: ink, grid: { stroke: grid, width: 1 }, ticks: { stroke: grid }, font: "11px system-ui" };
+  return new uPlot({
+    width: width || box.clientWidth, height, tzDate: uplotTz, legend: { show: legend }, cursor: { y: false },
+    plugins, scales: { x: { time: true } },
+    axes: [{ ...ax }, { ...ax, label: "°F", size: 40, labelSize: 14 }],
+    series: [{}, ...stations.map((s, i) => ({
+      label: s.name, stroke: cssVar(SENSOR_SERIES[i % SENSOR_SERIES.length]), width: 1.75,
+      value: (u, v) => (v == null ? "—" : `${v.toFixed(1)}°F`) }))],
+  }, [xs, ...ys], box);
+}

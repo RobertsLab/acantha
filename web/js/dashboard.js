@@ -1,13 +1,13 @@
-// "Today at Thorndyke" side panel: alerts, decision flags, tide/weather/rain/water cards.
+// "Today at Thorndyke" side panel: alerts, decision flags, tide/weather/rain/sensor/water cards.
 import {
   loadAll, fmtTime, fmtDayTime, fmtDay, ago, num, compass, el, toDate, tideAt, isDaylight,
   nearestHour, latestValue, getSettings, saveSettings, DEFAULTS, uplotTz, nightShade, nowLine,
-  cssVar, sourceBadge,
+  cssVar, sourceBadge, sensorChart,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 
-const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "water", "shellfish"]);
+const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "water", "shellfish", "sensors"]);
 let S = getSettings();
 
 function render() {
@@ -16,6 +16,7 @@ function render() {
   renderTide();
   renderWeather();
   renderRain();
+  renderSensors();
   renderWater();
   renderShellfish();
 }
@@ -82,6 +83,18 @@ function renderFlags() {
   // Biotoxin
   const closed = shellfishClosures();
   if (closed.length) add("bad", `Recreational biotoxin closure: ${closed[0].name}`, `${closed[0].status}. Check commercial biotoxin sampling results with DOH.`);
+
+  // Farm sensors: in-bag heat while exposed, and sensors that stopped reporting
+  const tag = D.sensors?.mock ? " (mock data)" : "";
+  for (const s of liveSensors()) {
+    if (s.latest.exposed && s.latest.temp_f >= S.heatF) {
+      add("bad", `In-bag temp ${num(s.latest.temp_f, 1)}°F at ${s.name}${tag}`,
+        `Probe is out of the water at low tide, reading ${ago(s.latest.t)}. At or above your ${S.heatF}°F heat threshold.`);
+    }
+  }
+  for (const s of (D.sensors?.stations || []).filter((x) => x.status !== "live")) {
+    add("warn", `Sensor ${s.status}: ${s.name}${tag}`, `Last reading ${ago(s.last_seen)}. Check battery, mount, or gateway.`);
+  }
 
   // Water temperature (Vibrio season)
   const wt = waterLatest()?.water_temp_f;
@@ -216,8 +229,33 @@ function renderRain() {
   );
 }
 
+// ---------- farm sensors ----------
+function liveSensors() {
+  return (D.sensors?.stations || []).filter((s) => s.status === "live" && s.latest);
+}
+
+function renderSensors() {
+  const stations = D.sensors?.stations || [];
+  $("sensors-card").hidden = !stations.length;
+  if (!stations.length) return;
+  $("sensors-badge").replaceChildren(sourceBadge(D.meta, "sensors"));
+  const state = (L) => (L?.exposed == null ? "" : L.exposed ? "out of water" : "in water");
+  const statusCls = { live: "badge ok", stale: "badge warn", offline: "badge bad" };
+  $("sensors-now").replaceChildren(
+    D.sensors.mock ? el("div", { class: "mock-banner" }, "Mock data: simulated readings, not real measurements") : "",
+    ...stations.map((s) => el("div", { class: "sensor-row" },
+      el("div", {}, el("b", {}, s.name), " ", el("span", { class: statusCls[s.status] }, s.status),
+        el("div", { class: "small muted" }, `${state(s.latest)}${s.latest ? ` · ${ago(s.latest.t)}` : ""} · ${num(s.elevation_ft, 1)} ft MLLW`)),
+      el("div", { class: "value" }, s.latest ? `${num(s.latest.temp_f, 1)}°F` : "—"))),
+  );
+  sensorChart($("sensors-chart"), stations, { hours: 72, height: 180, sun: D.sun });
+}
+
 // ---------- water ----------
+// Prefer an on-farm probe that is currently under water; fall back to the nearest public station.
 function waterLatest() {
+  const farm = liveSensors().find((s) => s.latest.exposed === false && !D.sensors.mock);
+  if (farm) return { water_temp_f: farm.latest.temp_f, t: farm.latest.t, station: farm };
   const st = (D.water?.stations || []).find((s) => s.latest);
   return st ? { ...st.latest, station: st } : null;
 }

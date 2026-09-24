@@ -39,6 +39,8 @@ ingest/
     sun.py           sunrise/sunset (computed)
     doh.py           WA DOH biotoxin status + commercial growing areas
     water.py         NANOOS/IOOS ERDDAP water temp, salinity, oxygen
+    sensors.py       farm LoRaWAN temperature nodes via The Things Network
+                     (SENSORS_MOCK=1 python3 ingest/fetch.py --only sensors for fake data)
 web/
   index.html         map + "Today at Thorndyke" panel
   tides.html         low-tide work-window calendar with .ics export
