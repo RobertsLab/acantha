@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thorndyke Data Sources</title>
+  <meta name="description" content="Where the Thorndyke Bay portal's data comes from and how fresh it is.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Thorndyke Bay <span>· Hood Canal conditions</span></h1>
+    <nav>
+      <a href="index.html">Map</a>
+      <a href="tides.html">Tides</a>
+      <a href="about.html" aria-current="page">Data</a>
+    </nav>
+  </header>
+  <main class="page">
+    <section class="card">
+      <h2>Data sources and freshness</h2>
+      <p class="small muted" id="gen"></p>
+      <div style="overflow-x:auto"><table id="src"><thead><tr><th>Feed</th><th>Source</th><th>Status</th><th>Download</th></tr></thead><tbody></tbody></table></div>
+    </section>
+    <section class="card">
+      <h2>About this portal</h2>
+      <p>This portal collects public environmental data for Thorndyke Bay (Hood Canal, Jefferson County, WA)
+        to help oyster growers plan day-to-day work: tide windows, heat exposure at low tide, rain, wind,
+        water conditions, and shellfish status. Data updates automatically about every 20 minutes.</p>
+      <p><b>Coming next:</b> on-site weather and water sensors at farm sites, UW LiveOcean water-column forecasts,
+        and text/email alerts.</p>
+      <p class="disclaimer">Advisory only. Official shellfish harvest closures come from the
+        <a href="https://doh.wa.gov/community-and-environment/shellfish">WA Department of Health</a>.
+        Tide predictions and forecasts can be wrong. Use your own judgment on the beach.</p>
+    </section>
+  </main>
+  <script type="module">
+    import { loadAll, ago, el, fmtDayTime } from "./js/common.js";
+    const FEEDS = [
+      ["tides", "Tide predictions", "NOAA CO-OPS (Lofall 9445088)", "https://tidesandcurrents.noaa.gov/stationhome.html?id=9445088"],
+      ["forecast", "Weather forecast (hourly, 7 day)", "NWS api.weather.gov, grid SEW 114,80", "https://www.weather.gov/sew/"],
+      ["alerts", "Weather and marine alerts", "NWS active alerts, point and zone PZZ135 (Hood Canal)", "https://www.weather.gov/sew/"],
+      ["observations", "Observed weather", "NWS/MADIS surface stations nearest the bay", "https://www.weather.gov/sew/"],
+      ["water", "Water temp, salinity, oxygen", "NOAA Port Townsend 9444900 (temp); ORCA buoys via IOOS ERDDAP when reporting", "https://nvs.nanoos.org/"],
+      ["shellfish", "Biotoxin status and growing areas", "WA Department of Health", "https://doh.wa.gov/community-and-environment/shellfish"],
+      ["sun", "Sunrise and sunset", "Computed (NOAA solar algorithm)", null],
+    ];
+    const { meta } = await loadAll(["meta"]);
+    document.getElementById("gen").textContent = meta ? `Last update run: ${fmtDayTime(meta.generated_at)} (${ago(meta.generated_at)})` : "No update run found.";
+    document.querySelector("#src tbody").replaceChildren(...FEEDS.map(([k, name, src, url]) => {
+      const s = meta?.sources?.[k];
+      const status = !s ? el("span", { class: "badge muted" }, "not fetched")
+        : s.ok ? el("span", { class: "badge ok" }, `OK · ${ago(s.fetched_at)}`)
+        : el("span", { class: "badge bad", title: s.error }, `Error · last good ${ago(s.fetched_at)}`);
+      return el("tr", {}, el("td", {}, name),
+        el("td", {}, url ? el("a", { href: url, target: "_blank", rel: "noopener" }, src) : src),
+        el("td", {}, status, s && !s.ok ? el("div", { class: "small muted" }, s.error) : ""),
+        el("td", {}, el("a", { href: `data/${k}.json` }, `${k}.json`)));
+    }));
+  </script>
+</body>
+</html>

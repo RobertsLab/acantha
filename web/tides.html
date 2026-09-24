@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thorndyke Tide Windows</title>
+  <meta name="description" content="Daylight low-tide work windows for Thorndyke Bay, from NOAA predictions.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1>Thorndyke Bay <span>· Hood Canal conditions</span></h1>
+    <nav>
+      <a href="index.html">Map</a>
+      <a href="tides.html" aria-current="page">Tides</a>
+      <a href="about.html">Data</a>
+    </nav>
+  </header>
+  <main class="page">
+    <section class="card">
+      <h2>Low-tide work windows <span id="badge"></span></h2>
+      <div class="row" style="align-items:center;gap:12px;margin-bottom:8px">
+        <label>Show lows at or below <input id="thr" type="number" step="0.5" style="width:70px"> ft (MLLW)</label>
+        <label><input id="daylight" type="checkbox" checked> Daylight only</label>
+        <button id="ics" type="button">Download calendar (.ics)</button>
+      </div>
+      <p class="small muted" id="station"></p>
+      <div class="cal" id="cal"></div>
+    </section>
+    <section class="card">
+      <h2>High / low predictions, next 35 days</h2>
+      <div class="chart" id="chart"></div>
+    </section>
+    <p class="disclaimer">Predictions are astronomical. Wind and pressure can make real tides higher or lower.
+      Hood Canal has no real-time NOAA tide gauge.</p>
+  </main>
+  <script type="module" src="js/tides.js"></script>
+</body>
+</html>

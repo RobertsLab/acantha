@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thorndyke Bay Conditions</title>
+  <meta name="description" content="Tides, weather, water, and shellfish status for oyster growers in Thorndyke Bay, Hood Canal, WA.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0f6e6a">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1>Thorndyke Bay <span>· Hood Canal conditions</span></h1>
+    <nav>
+      <a href="index.html" aria-current="page">Map</a>
+      <a href="tides.html">Tides</a>
+      <a href="about.html">Data</a>
+    </nav>
+  </header>
+
+  <div class="map-layout">
+    <div id="map" role="region" aria-label="Map of Thorndyke Bay data stations"></div>
+    <aside class="panel" id="panel">
+      <div id="alerts"></div>
+      <section class="card" id="flags-card"><h2>Today's flags</h2><ul class="flags" id="flags"><li>Loading…</li></ul></section>
+      <section class="card" id="tide-card"><h2>Tide <span id="tide-badge"></span></h2><div id="tide-now"></div><div class="chart" id="tide-chart"></div></section>
+      <section class="card" id="wx-card"><h2>Weather <span id="wx-badge"></span></h2><div id="wx-now"></div><div class="chart" id="wx-chart"></div></section>
+      <section class="card" id="rain-card"><h2>Rain <span id="rain-badge"></span></h2><div id="rain-now"></div></section>
+      <section class="card" id="water-card"><h2>Water <span id="water-badge"></span></h2><div id="water-now"></div></section>
+      <section class="card" id="shellfish-card"><h2>Shellfish status <span id="shellfish-badge"></span></h2><div id="shellfish-now"></div></section>
+      <section class="card">
+        <details>
+          <summary><b>My thresholds</b> <span class="muted small">(saved in this browser)</span></summary>
+          <form class="settings" id="settings" style="margin-top:10px"></form>
+        </details>
+      </section>
+      <p class="disclaimer">Advisory only. Official shellfish harvest closures come from the
+        <a href="https://doh.wa.gov/community-and-environment/shellfish" target="_blank" rel="noopener">WA Department of Health</a>.
+        Always check DOH before harvesting.</p>
+    </aside>
+  </div>
+
+  <script type="module" src="js/map.js"></script>
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
