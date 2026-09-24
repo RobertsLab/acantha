@@ -47,3 +47,9 @@ SENSORS = [
     {"id": "thorndyke-float", "name": "Subtidal float", "lat": 47.8053, "lon": -122.7336,
      "elevation_ft": -4.0, "placement": "Probe 1 m below float"},
 ]
+
+# Observed rain (Stage IV at the site + nearby CoCoRaHS gauges), for the rain closure watch.
+RAIN_HOURS = 7 * 24           # hourly history kept in rain.json
+RAIN_GAUGE_MAX_KM = 15        # CoCoRaHS gauges within this distance
+RAIN_GAUGE_MAX_N = 5          # ... nearest N that have reported
+RAIN_GAUGE_DAYS = 4           # daily reports looked back over

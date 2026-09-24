@@ -7,7 +7,7 @@ import {
 
 const $ = (id) => document.getElementById(id);
 
-const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "water", "shellfish", "sensors"]);
+const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors"]);
 let S = getSettings();
 
 function render() {
@@ -72,7 +72,7 @@ function renderFlags() {
 
   // Rain closure watch
   const r = rainTotals();
-  const basis = r.past == null ? "next 24 h forecast; no observed rain gauge nearby"
+  const basis = r.past == null ? "next 24 h forecast; no observed rain available"
     : `${num(r.past, 2)} in observed past 24 h + ${num(r.next, 2)} in forecast next 24 h`;
   if (r.total != null && r.total >= S.rainIn24h) {
     add("bad", `Rain closure watch: ${num(r.total, 2)} in`, `${basis}. At or above your ${S.rainIn24h} in threshold. Confirm status with DOH.`);
@@ -193,40 +193,83 @@ function renderWeather() {
 }
 
 // ---------- rain ----------
+const sumQpf = (hours) => (D.forecast?.hourly || [])
+  .filter((h) => toDate(h.t) >= Date.now() - 3600e3 && toDate(h.t) - Date.now() < hours * 3600e3)
+  .reduce((a, h) => a + (h.qpf_in || 0), 0);
+
 function rainTotals() {
-  // Past 24 h: sum hourly precip from the nearest station that reports it.
-  let past = null, pastSt = null;
-  for (const st of D.observations?.stations || []) {
-    const rows = st.series.filter((r) => Date.now() - toDate(r.t) <= 24 * 3600e3 && r.precip_1h_in != null);
-    if (rows.length >= 12) {
-      // collapse to one value per clock hour (stations may report more often)
-      const byHour = {};
-      for (const r of rows) byHour[r.t.slice(0, 13)] = Math.max(byHour[r.t.slice(0, 13)] ?? 0, r.precip_1h_in);
-      past = Object.values(byHour).reduce((a, b) => a + b, 0);
-      pastSt = st;
-      break;
+  // Past 24 h: Stage IV radar/gauge analysis at the site (ends ~2 h ago), else
+  // the nearest NWS station that reports hourly precip.
+  let past = null, pastSrc = null, through = null;
+  if (D.rain?.totals?.h24 != null) {
+    past = D.rain.totals.h24;
+    pastSrc = "Stage IV radar + gauge estimate at the bay";
+    through = D.rain.through;
+  } else {
+    for (const st of D.observations?.stations || []) {
+      const rows = st.series.filter((r) => Date.now() - toDate(r.t) <= 24 * 3600e3 && r.precip_1h_in != null);
+      if (rows.length >= 12) {
+        // collapse to one value per clock hour (stations may report more often)
+        const byHour = {};
+        for (const r of rows) byHour[r.t.slice(0, 13)] = Math.max(byHour[r.t.slice(0, 13)] ?? 0, r.precip_1h_in);
+        past = Object.values(byHour).reduce((a, b) => a + b, 0);
+        pastSrc = st.name;
+        break;
+      }
     }
   }
-  const next = (D.forecast?.hourly || []).filter((h) => toDate(h.t) - Date.now() < 24 * 3600e3)
-    .reduce((a, h) => a + (h.qpf_in || 0), 0);
+  const next = sumQpf(24);
   const total = past == null && !D.forecast ? null : (past || 0) + next;
-  return { past, pastSt, next, total };
+  return { past, pastSrc, through, next, total };
 }
 
 function renderRain() {
-  $("rain-badge").replaceChildren(sourceBadge(D.meta, "observations"));
+  $("rain-badge").replaceChildren(sourceBadge(D.meta, D.rain ? "rain" : "observations"));
   const r = rainTotals();
-  const next72 = (D.forecast?.hourly || []).filter((h) => toDate(h.t) - Date.now() < 72 * 3600e3)
-    .reduce((a, h) => a + (h.qpf_in || 0), 0);
+  const t = D.rain?.totals || {};
+  const stat = (label, v) => el("div", { class: "stat" }, el("div", { class: "label" }, label),
+    el("div", { class: "value" }, v == null ? "—" : `${num(v, 2)} in`));
+  const gauges = D.rain?.gauges || [];
   $("rain-now").replaceChildren(
     el("div", { class: "row" },
-      el("div", { class: "stat" }, el("div", { class: "label" }, "Past 24 h"), el("div", { class: "value" }, r.past == null ? "—" : `${num(r.past, 2)} in`)),
-      el("div", { class: "stat" }, el("div", { class: "label" }, "Next 24 h"), el("div", { class: "value" }, `${num(r.next, 2)} in`)),
-      el("div", { class: "stat" }, el("div", { class: "label" }, "Next 72 h"), el("div", { class: "value" }, `${num(next72, 2)} in`))),
+      stat("Past 24 h", r.past), stat("Past 72 h", t.h72), stat("Next 24 h", r.next), stat("Next 72 h", sumQpf(72))),
     el("div", { class: "small muted" },
-      r.pastSt ? `Observed: ${r.pastSt.name}. ` : "No nearby gauge reporting hourly rain. ",
+      r.pastSrc ? `Observed: ${r.pastSrc}${r.through ? `, through ${fmtDayTime(r.through)}` : ""}. ` : "No observed rain available. ",
       `Forecast: NWS QPF. Closure-watch threshold: ${S.rainIn24h} in (set below).`),
+    gauges.length ? el("details", { class: "small" },
+      el("summary", {}, `Nearby CoCoRaHS gauges (${gauges.length})`),
+      el("ul", {}, ...gauges.map((g) => el("li", {},
+        el("a", { href: g.url, target: "_blank", rel: "noopener" }, g.name), ` · ${num(g.distance_km, 1)} km · `,
+        g.latest.trace ? "trace" : `${num(g.latest.precip_in, 2)} in`,
+        ` for 24 h to ~7 am ${fmtDay(g.latest.date + "T12:00:00")}`))),
+      el("div", { class: "muted" }, "Volunteer gauges, read once a day. Useful as a check on the radar estimate.")) : null,
   );
+  renderRainChart();
+}
+
+function renderRainChart() {
+  // Bars: observed hourly rain (past 72 h) then forecast QPF (next 72 h).
+  const box = $("rain-chart");
+  box.replaceChildren();
+  const now = Date.now();
+  const obs = (D.rain?.hourly || []).filter((h) => now - toDate(h.t) <= 72 * 3600e3);
+  const fc = (D.forecast?.hourly || []).filter((h) => toDate(h.t) - now < 72 * 3600e3 && toDate(h.t) > now - 3600e3);
+  if (!obs.length && !fc.length) return;
+  // Stage IV times mark the end of the hour; shift to the start so bars line up with QPF.
+  const rows = [
+    ...obs.map((h) => [toDate(h.t) / 1e3 - 1800, h.precip_in, null]),
+    ...fc.map((h) => [toDate(h.t) / 1e3 + 1800, null, h.qpf_in ?? 0]),
+  ].sort((a, b) => a[0] - b[0]);
+  const bars = uPlot.paths.bars({ size: [0.9, 12] });
+  new uPlot({
+    width: box.clientWidth, height: 140, tzDate: uplotTz,
+    plugins: [nightShade(D.sun), nowLine()],
+    scales: { x: { time: true }, y: { range: (u, mn, mx) => [0, Math.max(0.05, mx * 1.15)] } },
+    axes: axes("in/hr"),
+    series: [{},
+      { label: "Observed in/hr", stroke: cssVar("--series-1"), fill: cssVar("--series-1"), paths: bars, points: { show: false } },
+      { label: "Forecast in/hr", stroke: cssVar("--series-3"), fill: cssVar("--series-3") + "80", paths: bars, points: { show: false } }],
+  }, [rows.map((r) => r[0]), rows.map((r) => r[1]), rows.map((r) => r[2])], box);
 }
 
 // ---------- farm sensors ----------

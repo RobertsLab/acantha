@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import SITE  # noqa: E402
-from sources import doh, nws, sensors, sun, tides, water  # noqa: E402
+from sources import doh, nws, rain, sensors, sun, tides, water  # noqa: E402
 from sources.common import iso, utcnow  # noqa: E402
 
 SOURCES = {
@@ -30,6 +30,7 @@ SOURCES = {
     "forecast": nws.forecast,
     "alerts": nws.alerts,
     "observations": nws.observations,
+    "rain": rain.fetch,
     "shellfish": doh.fetch,
     "water": water.fetch,
     "sensors": sensors.fetch,  # after tides: uses tides.json to flag low-tide exposure

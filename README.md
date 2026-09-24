@@ -36,6 +36,7 @@ ingest/
   sources/           one module per data source
     tides.py         NOAA CO-OPS predictions (Lofall 9445088)
     nws.py           NWS gridded forecast, alerts (PZZ135), surface observations
+    rain.py          observed rain: Stage IV at the site + CoCoRaHS gauges (via IEM)
     sun.py           sunrise/sunset (computed)
     doh.py           WA DOH biotoxin status + commercial growing areas
     water.py         NANOOS/IOOS ERDDAP water temp, salinity, oxygen
@@ -70,8 +71,10 @@ or re-enable the workflow when that happens.
 ## Known gaps in the MVP
 
 - **No real-time tide gauge in Hood Canal.** Tides are NOAA predictions only.
-- **No nearby observed rain gauge in the NWS feed.** The rain closure watch uses forecast QPF plus any
-  station that reports hourly precipitation.
+- **Observed rain is an estimate, not a gauge at the bay.** None of the nearby NWS stations report rain,
+  so the closure watch uses the NCEP Stage IV radar + gauge analysis at the site (about 2 h behind real
+  time; in the Northwest its hourly values are 6-hour totals spread evenly) plus NWS forecast QPF.
+  Nearby CoCoRaHS volunteer gauges (daily, ~7 am) are shown as a check. An on-farm gauge is Phase 2.
 - **The rain threshold is a placeholder** (1.0 in / 24 h). Each grower should set it to their growing
   area's DOH conditional-closure rule.
 - **No current water-quality data near the bay.** As of Sept 2026 the ORCA Hansville and Dabob Bay
