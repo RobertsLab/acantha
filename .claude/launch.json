@@ -4,8 +4,20 @@
     {
       "name": "web",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["serve.py", "8001"],
+      "runtimeArgs": [
+        "serve.py",
+        "8001"
+      ],
       "port": 8001
+    },
+    {
+      "name": "web-alt",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "serve.py",
+        "8002"
+      ],
+      "port": 8002
     }
   ]
 }
