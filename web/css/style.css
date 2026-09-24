@@ -126,6 +126,13 @@ th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spa
   padding: 8px 10px; font-size: 13px; line-height: 1.8;
 }
 .layer-ctl label { display: block; cursor: pointer; white-space: nowrap; }
+.radar-player { margin: 0 0 2px 20px; line-height: 1.5; }
+.radar-player > div { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.radar-mode { font: inherit; font-size: 12px; padding: 1px 4px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--panel); color: var(--ink); }
+.radar-player[hidden] { display: none; }
+.radar-btn { padding: 0 6px; font-size: 11px; line-height: 20px; min-width: 24px; }
+.radar-time { font-variant-numeric: tabular-nums; }
 .layer-ctl hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
 .maplibregl-popup-content { background: var(--panel) !important; color: var(--ink); border-radius: 8px !important;
   font: 13px/1.4 system-ui, sans-serif; max-width: 280px; }

@@ -9,6 +9,39 @@ const NOAA_ENC =
   "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image/png&TRANSPARENT=true&LAYERS=0,1,2,3,4,5,6,7" +
   "&CRS=EPSG:3857&STYLES=&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}";
 
+// Weather radar, two flavors:
+//  mosaic — NEXRAD base reflectivity composite (~1 km, Iowa Environmental Mesonet), 5-min frames for the last 50 min.
+//  katx   — KATX (Camano Is.) super-res base reflectivity (~450 m over Hood Canal) from the NWS
+//           radar GIS server, its last 10 scans (~6 min apart when precipitating).
+const IEM = "https://mesonet.agron.iastate.edu";
+const KATX_WMS = "https://opengeo.ncep.noaa.gov/geoserver/katx/ows";
+const MOSAIC_OFFSETS = [50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0]; // minutes before latest scan
+const RADAR_MODES = {
+  mosaic: {
+    label: "Regional mosaic", maxzoom: 12,
+    attribution: "Radar: NWS NEXRAD via Iowa Environmental Mesonet",
+    async frames() {
+      const r = await fetch(`${IEM}/data/gis/images/4326/USCOMP/n0q_0.json`, { cache: "no-store" });
+      const valid = new Date((await r.json()).meta.valid);
+      // The -mNNm layer names shift every 5 min, so key the URLs to the scan they came from.
+      return MOSAIC_OFFSETS.map((m) => ({ t: new Date(valid - m * 60e3),
+        tiles: [`${IEM}/cache/tile.py/1.0.0/nexrad-n0q-900913${m ? `-m${String(m).padStart(2, "0")}m` : ""}/{z}/{x}/{y}.png?v=${valid.getTime()}`] }));
+    },
+  },
+  katx: {
+    label: "KATX hi-res", maxzoom: 14,
+    attribution: "Radar: NWS KATX super-res via NOAA/NCEP",
+    async frames() {
+      const r = await fetch(`${KATX_WMS.replace("/ows", "/katx_sr_bref/ows")}?service=WMS&version=1.3.0&request=GetCapabilities`, { cache: "no-store" });
+      const xml = new DOMParser().parseFromString(await r.text(), "text/xml");
+      const times = [...xml.querySelectorAll('Dimension[name="time"]')].pop()?.textContent.trim().split(",") || [];
+      return times.slice(-10).map((ts) => ({ t: new Date(ts),
+        tiles: [`${KATX_WMS}?service=WMS&version=1.3.0&request=GetMap&layers=katx_sr_bref&styles=&format=image/png&transparent=true` +
+          `&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}&time=${ts}`] }));
+    },
+  },
+};
+
 const map = new maplibregl.Map({
   container: "map",
   center: [site.lon, site.lat],
@@ -128,6 +161,71 @@ map.on("load", () => {
   map.addControl(new LayerControl(), "top-right");
 });
 
+// ---------- radar loop ----------
+const radar = {
+  on: false, playing: true, mode: "mosaic", frames: [], frame: 0, timer: null, refresh: null,
+  label: el("span", { class: "radar-time muted small" }),
+  btn: el("button", { type: "button", class: "radar-btn", title: "Play/pause radar loop", "aria-label": "Play/pause radar loop" }, "❚❚"),
+
+  clear() {
+    this.frames.forEach((_, i) => { map.removeLayer(`radar-${i}`); map.removeSource(`radar-${i}`); });
+    this.frames = [];
+  },
+  async load() {
+    const mode = this.mode;
+    let frames;
+    try { frames = await RADAR_MODES[mode].frames(); } catch { return; } // keep what's showing
+    if (!this.on || mode !== this.mode || !frames.length) return;
+    const key = (fs) => fs.map((f) => f.tiles[0]).join();
+    if (key(frames) === key(this.frames)) return;
+    this.clear();
+    const before = map.getLayer("points") ? "points" : undefined;
+    frames.forEach((f, i) => {
+      map.addSource(`radar-${i}`, { type: "raster", tiles: f.tiles, tileSize: 256, maxzoom: RADAR_MODES[mode].maxzoom,
+        ...(i ? {} : { attribution: RADAR_MODES[mode].attribution }) });
+      map.addLayer({ id: `radar-${i}`, type: "raster", source: `radar-${i}`,
+        paint: { "raster-opacity": 0, "raster-fade-duration": 0 } }, before);
+    });
+    this.frames = frames;
+    this.show(frames.length - 1);
+    this.timer = setTimeout(() => this.tick(), 1500); // let the first frames load
+  },
+  show(i) {
+    this.frame = i;
+    this.frames.forEach((_, j) => map.setPaintProperty(`radar-${j}`, "raster-opacity", j === i ? 0.7 : 0));
+    const f = this.frames[i], last = i === this.frames.length - 1;
+    const mins = f && Math.round((this.frames.at(-1).t - f.t) / 60e3);
+    this.label.textContent = f ? `${fmtTime(f.t)}${last ? " · latest" : ` (−${mins}m)`}` : "Loading…";
+  },
+  tick() {
+    clearTimeout(this.timer);
+    if (!this.on || !this.playing || !this.frames.length) return;
+    const n = this.frames.length;
+    this.show(this.frame === n - 1 ? 0 : this.frame + 1);
+    this.timer = setTimeout(() => this.tick(), this.frame === n - 1 ? 2000 : 450);
+  },
+  restart() {
+    clearTimeout(this.timer); clearInterval(this.refresh);
+    this.clear();
+    this.player.hidden = !this.on;
+    if (!this.on) return;
+    this.show(0);
+    this.load();
+    this.refresh = setInterval(() => this.load(), 3 * 60e3);
+  },
+  toggle(on) { this.on = on; this.restart(); },
+  setMode(mode) { this.mode = mode; this.restart(); },
+};
+radar.btn.addEventListener("click", () => {
+  radar.playing = !radar.playing;
+  radar.btn.textContent = radar.playing ? "❚❚" : "▶";
+  if (radar.playing) radar.tick();
+  else { clearTimeout(radar.timer); if (radar.frames.length) radar.show(radar.frames.length - 1); }
+});
+radar.select = el("select", { class: "radar-mode", "aria-label": "Radar source", onchange: (e) => radar.setMode(e.target.value) },
+  ...Object.entries(RADAR_MODES).map(([k, m]) => el("option", { value: k }, m.label)));
+radar.player = el("div", { class: "radar-player", hidden: "" }, radar.select, el("div", {}, radar.btn, " ", radar.label));
+
 // ---------- popups ----------
 function popup(f, lngLat) {
   const p = f.properties;
@@ -206,6 +304,8 @@ class LayerControl {
       radio("osm", "Streets", true), radio("imagery", "Satellite"),
       el("hr"),
       check(["chart"], "Nautical chart", false),
+      el("label", {}, el("input", { type: "checkbox", onchange: (e) => radar.toggle(e.target.checked) }), " Weather radar"),
+      radar.player,
       check(["areas-fill", "areas-line"], "Commercial growing areas", true),
       check(["biotoxin-fill", "biotoxin-line"], "Recreational biotoxin zones", false),
       check(["points", "labels"], "Stations", true),
