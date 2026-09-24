@@ -52,6 +52,11 @@ header.top nav a {
   text-decoration: none; color: var(--muted); padding: 6px 10px; border-radius: 8px; font-weight: 600;
 }
 header.top nav a[aria-current="page"] { color: var(--ink); background: var(--bg); }
+header.top h1 .beta {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; vertical-align: 2px;
+  color: var(--warn); background: var(--warn-bg); padding: 2px 7px; border-radius: 999px; margin-left: 4px;
+}
+header.top nav a.feedback { color: var(--accent); border: 1px solid var(--line); }
 
 /* ---------- map page layout ---------- */
 .map-layout { display: grid; grid-template-columns: 1fr 440px; height: calc(100vh - 53px); }
