@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import SITE  # noqa: E402
-from sources import doh, nws, rain, sensors, sun, tides, water  # noqa: E402
+from sources import doh, liveocean, nws, rain, sensors, sun, tides, water  # noqa: E402
 from sources.common import iso, utcnow  # noqa: E402
 
 SOURCES = {
@@ -33,11 +33,12 @@ SOURCES = {
     "rain": rain.fetch,
     "shellfish": doh.fetch,
     "water": water.fetch,
+    "liveocean": liveocean.fetch,  # daily model run; reuses previous output if unchanged
     "sensors": sensors.fetch,  # after tides: uses tides.json to flag low-tide exposure
 }
 
 # Sources that take a Context argument (previous output, other sources' output).
-WITH_CONTEXT = {"sensors"}
+WITH_CONTEXT = {"sensors", "liveocean"}
 
 
 def load_fallback(base: str, name: str):

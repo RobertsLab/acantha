@@ -16,6 +16,12 @@ def get_json(url: str, timeout: int = 30, accept: str = "application/json"):
         return json.load(resp)
 
 
+def get_text(url: str, timeout: int = 60) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8")
+
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -65,6 +71,6 @@ def hour_floor(dt: datetime) -> datetime:
 
 
 __all__ = [
-    "get_json", "utcnow", "iso", "parse_iso", "parse_valid_time", "distance_km",
+    "get_json", "get_text", "utcnow", "iso", "parse_iso", "parse_valid_time", "distance_km",
     "c_to_f", "kmh_to_mph", "mm_to_in", "hour_floor", "timedelta", "timezone",
 ]

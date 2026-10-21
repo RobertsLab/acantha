@@ -53,3 +53,20 @@ RAIN_HOURS = 7 * 24           # hourly history kept in rain.json
 RAIN_GAUGE_MAX_KM = 15        # CoCoRaHS gauges within this distance
 RAIN_GAUGE_MAX_N = 5          # ... nearest N that have reported
 RAIN_GAUGE_DAYS = 4           # daily reports looked back over
+
+# UW LiveOcean model (nowcast + ~2-3 day forecast), read over OPeNDAP. The public
+# aggregation is surface-only temp/salt/zeta; see docs/liveocean-plan.md.
+# Servers are tried in order. The NANOOS/OSU THREDDS (nanoos.ceoas.oregonstate.edu)
+# was unreachable when this was written; add its dataset path here once confirmed.
+LIVEOCEAN_URLS = [
+    "https://eds.ioos.us/thredds/dodsC/ioos/nanoos/liveocean/NANOOS_Live_Ocean_best.ncd",
+]
+LIVEOCEAN_HINDCAST_DAYS = 7
+# Nearest wet model cells (cas7 grid, ~500 m). lat/lon are the cell centers, checked
+# each run so a model regrid fails loudly instead of reading the wrong place.
+LIVEOCEAN_CELLS = [
+    {"id": "thorndyke", "name": "Thorndyke Bay mouth", "eta": 788, "xi": 553,
+     "lat": 47.8041, "lon": -122.7357},
+    {"id": "dabob", "name": "ORCA Dabob Bay buoy", "eta": 788, "xi": 543,
+     "lat": 47.8041, "lon": -122.8030},  # for model-vs-buoy comparison
+]
