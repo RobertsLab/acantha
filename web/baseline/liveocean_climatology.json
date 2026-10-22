@@ -1,0 +1,418 @@
+{
+ "source": "UW LiveOcean monthly climatology",
+ "model_run": "cas7_t0_x4b",
+ "years": "2014-2024",
+ "url": "https://s3.kopah.uw.edu/cas7-t0-x4b/climatologies/monthly_clim_[01-12].nc",
+ "units": {
+  "temp_c": "degC (potential)",
+  "salt": "PSU",
+  "do_mgl": "mg/L",
+  "do_um": "uM"
+ },
+ "note": "Monthly means; bottom = deepest model layer. Bottom O2 may be biased low in the Salish Sea.",
+ "generated_at": "2026-10-22T15:52:37Z",
+ "cells": [
+  {
+   "id": "thorndyke",
+   "name": "Thorndyke Bay mouth",
+   "months": [
+    {
+     "month": 1,
+     "surface": {
+      "temp_c": 7.64,
+      "salt": 27.23,
+      "do_mgl": 8.48,
+      "do_um": 264.9
+     },
+     "bottom": {
+      "temp_c": 8.13,
+      "salt": 29.91,
+      "do_mgl": 7.59,
+      "do_um": 237.2,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 2,
+     "surface": {
+      "temp_c": 7.6,
+      "salt": 27.34,
+      "do_mgl": 9.05,
+      "do_um": 282.9
+     },
+     "bottom": {
+      "temp_c": 7.97,
+      "salt": 29.61,
+      "do_mgl": 8.0,
+      "do_um": 250.0,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 3,
+     "surface": {
+      "temp_c": 8.28,
+      "salt": 27.68,
+      "do_mgl": 9.49,
+      "do_um": 296.4
+     },
+     "bottom": {
+      "temp_c": 8.11,
+      "salt": 29.68,
+      "do_mgl": 8.22,
+      "do_um": 256.9,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 4,
+     "surface": {
+      "temp_c": 9.95,
+      "salt": 28.13,
+      "do_mgl": 10.03,
+      "do_um": 313.3
+     },
+     "bottom": {
+      "temp_c": 8.98,
+      "salt": 29.78,
+      "do_mgl": 8.11,
+      "do_um": 253.4,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 5,
+     "surface": {
+      "temp_c": 12.67,
+      "salt": 28.19,
+      "do_mgl": 10.74,
+      "do_um": 335.8
+     },
+     "bottom": {
+      "temp_c": 10.13,
+      "salt": 29.95,
+      "do_mgl": 7.59,
+      "do_um": 237.3,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 6,
+     "surface": {
+      "temp_c": 14.66,
+      "salt": 28.36,
+      "do_mgl": 10.49,
+      "do_um": 327.9
+     },
+     "bottom": {
+      "temp_c": 11.19,
+      "salt": 30.06,
+      "do_mgl": 6.93,
+      "do_um": 216.5,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 7,
+     "surface": {
+      "temp_c": 16.09,
+      "salt": 28.86,
+      "do_mgl": 10.02,
+      "do_um": 313.1
+     },
+     "bottom": {
+      "temp_c": 11.93,
+      "salt": 30.3,
+      "do_mgl": 6.27,
+      "do_um": 196.0,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 8,
+     "surface": {
+      "temp_c": 15.91,
+      "salt": 29.52,
+      "do_mgl": 9.22,
+      "do_um": 288.1
+     },
+     "bottom": {
+      "temp_c": 12.35,
+      "salt": 30.63,
+      "do_mgl": 5.87,
+      "do_um": 183.4,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 9,
+     "surface": {
+      "temp_c": 13.85,
+      "salt": 29.99,
+      "do_mgl": 7.48,
+      "do_um": 233.8
+     },
+     "bottom": {
+      "temp_c": 12.04,
+      "salt": 30.88,
+      "do_mgl": 5.5,
+      "do_um": 171.8,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 10,
+     "surface": {
+      "temp_c": 11.59,
+      "salt": 29.93,
+      "do_mgl": 6.4,
+      "do_um": 200.1
+     },
+     "bottom": {
+      "temp_c": 11.13,
+      "salt": 30.92,
+      "do_mgl": 5.45,
+      "do_um": 170.2,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 11,
+     "surface": {
+      "temp_c": 9.75,
+      "salt": 28.75,
+      "do_mgl": 7.15,
+      "do_um": 223.3
+     },
+     "bottom": {
+      "temp_c": 10.05,
+      "salt": 30.59,
+      "do_mgl": 6.26,
+      "do_um": 195.7,
+      "depth_m": 21.3
+     }
+    },
+    {
+     "month": 12,
+     "surface": {
+      "temp_c": 8.22,
+      "salt": 27.58,
+      "do_mgl": 7.91,
+      "do_um": 247.0
+     },
+     "bottom": {
+      "temp_c": 8.95,
+      "salt": 30.15,
+      "do_mgl": 6.93,
+      "do_um": 216.6,
+      "depth_m": 21.3
+     }
+    }
+   ],
+   "lat": 47.8041,
+   "lon": -122.7357,
+   "depth_m": 21.8
+  },
+  {
+   "id": "dabob",
+   "name": "ORCA Dabob Bay buoy",
+   "months": [
+    {
+     "month": 1,
+     "surface": {
+      "temp_c": 7.03,
+      "salt": 26.41,
+      "do_mgl": 9.56,
+      "do_um": 298.6
+     },
+     "bottom": {
+      "temp_c": 9.95,
+      "salt": 31.12,
+      "do_mgl": 4.43,
+      "do_um": 138.3,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 2,
+     "surface": {
+      "temp_c": 7.28,
+      "salt": 26.7,
+      "do_mgl": 9.91,
+      "do_um": 309.7
+     },
+     "bottom": {
+      "temp_c": 9.64,
+      "salt": 31.03,
+      "do_mgl": 4.73,
+      "do_um": 147.8,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 3,
+     "surface": {
+      "temp_c": 8.35,
+      "salt": 26.95,
+      "do_mgl": 10.54,
+      "do_um": 329.3
+     },
+     "bottom": {
+      "temp_c": 9.4,
+      "salt": 30.95,
+      "do_mgl": 4.77,
+      "do_um": 149.2,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 4,
+     "surface": {
+      "temp_c": 10.64,
+      "salt": 27.41,
+      "do_mgl": 10.98,
+      "do_um": 343.0
+     },
+     "bottom": {
+      "temp_c": 9.12,
+      "salt": 30.88,
+      "do_mgl": 4.62,
+      "do_um": 144.4,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 5,
+     "surface": {
+      "temp_c": 13.99,
+      "salt": 27.37,
+      "do_mgl": 11.73,
+      "do_um": 366.6
+     },
+     "bottom": {
+      "temp_c": 9.0,
+      "salt": 30.81,
+      "do_mgl": 4.18,
+      "do_um": 130.5,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 6,
+     "surface": {
+      "temp_c": 16.07,
+      "salt": 27.5,
+      "do_mgl": 11.58,
+      "do_um": 361.8
+     },
+     "bottom": {
+      "temp_c": 9.06,
+      "salt": 30.77,
+      "do_mgl": 3.56,
+      "do_um": 111.2,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 7,
+     "surface": {
+      "temp_c": 18.0,
+      "salt": 28.16,
+      "do_mgl": 11.44,
+      "do_um": 357.5
+     },
+     "bottom": {
+      "temp_c": 9.23,
+      "salt": 30.76,
+      "do_mgl": 2.79,
+      "do_um": 87.3,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 8,
+     "surface": {
+      "temp_c": 17.9,
+      "salt": 29.04,
+      "do_mgl": 10.94,
+      "do_um": 341.7
+     },
+     "bottom": {
+      "temp_c": 9.48,
+      "salt": 30.8,
+      "do_mgl": 2.04,
+      "do_um": 63.8,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 9,
+     "surface": {
+      "temp_c": 15.32,
+      "salt": 29.7,
+      "do_mgl": 9.46,
+      "do_um": 295.6
+     },
+     "bottom": {
+      "temp_c": 9.79,
+      "salt": 30.92,
+      "do_mgl": 1.67,
+      "do_um": 52.2,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 10,
+     "surface": {
+      "temp_c": 12.37,
+      "salt": 29.57,
+      "do_mgl": 8.19,
+      "do_um": 255.8
+     },
+     "bottom": {
+      "temp_c": 10.27,
+      "salt": 31.14,
+      "do_mgl": 2.33,
+      "do_um": 72.9,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 11,
+     "surface": {
+      "temp_c": 9.52,
+      "salt": 28.16,
+      "do_mgl": 8.38,
+      "do_um": 261.8
+     },
+     "bottom": {
+      "temp_c": 10.54,
+      "salt": 31.26,
+      "do_mgl": 3.2,
+      "do_um": 100.1,
+      "depth_m": 77.0
+     }
+    },
+    {
+     "month": 12,
+     "surface": {
+      "temp_c": 7.44,
+      "salt": 26.74,
+      "do_mgl": 9.09,
+      "do_um": 284.1
+     },
+     "bottom": {
+      "temp_c": 10.36,
+      "salt": 31.23,
+      "do_mgl": 3.85,
+      "do_um": 120.3,
+      "depth_m": 77.0
+     }
+    }
+   ],
+   "lat": 47.8041,
+   "lon": -122.803,
+   "depth_m": 78.7
+  }
+ ]
+}

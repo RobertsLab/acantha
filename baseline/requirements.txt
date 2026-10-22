@@ -1,0 +1,4 @@
+# One-off LiveOcean climatology baseline (baseline/). Kept apart from ingest/, which is stdlib-only.
+aiohttp>=3.9
+fsspec>=2024.2
+h5py>=3.10
