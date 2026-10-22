@@ -73,7 +73,7 @@ def _ascii(base: str, constraint: str) -> dict:
     return parse_ascii(get_text(f"{base}.ascii?{constraint}"))
 
 
-def _cell(base: str, cell: dict, i0: int, i1: int, times: list[datetime], run: datetime) -> dict:
+def _cell(base: str, cell: dict, i0: int, i1: int, times: list[datetime | None], run: datetime) -> dict:
     e, x, sl = cell["eta"], cell["xi"], f"[{i0}:1:{i1}]"
     d = _ascii(base, f"temp{sl}[{e}][{x}],salt{sl}[{e}][{x}],zeta{sl}[{e}][{x}],"
                      f"lat_rho[{e}][{x}],lon_rho[{e}][{x}],mask_rho[{e}][{x}],h[{e}][{x}]")
@@ -84,7 +84,7 @@ def _cell(base: str, cell: dict, i0: int, i1: int, times: list[datetime], run: d
                            "the grid may have changed, recompute LIVEOCEAN_CELLS")
     series = []
     for t, temp, salt, zeta in zip(times, d["temp"], d["salt"], d["zeta"]):
-        if temp is None and salt is None and zeta is None:
+        if t is None or (temp is None and salt is None and zeta is None):
             continue
         series.append({"t": iso(t), "temp_c": None if temp is None else round(temp, 2),
                        "temp_f": c_to_f(temp), "salt": None if salt is None else round(salt, 2),
@@ -117,11 +117,12 @@ def _fetch_from(base: str, previous: dict | None) -> dict:
     hours = _ascii(base, f"time[0:1:{n - 1}]")["time"]
     start = run - timedelta(days=LIVEOCEAN_HINDCAST_DAYS)
     i0 = next(i for i, h in enumerate(hours) if h is not None and t0 + timedelta(hours=h) >= start)
-    times = [t0 + timedelta(hours=h) for h in hours[i0:]]
+    # Keep a None slot for a missing time so indices stay aligned with the value arrays.
+    times = [None if h is None else t0 + timedelta(hours=h) for h in hours[i0:]]
     cells = [_cell(base, c, i0, n - 1, times, run) for c in LIVEOCEAN_CELLS]
     return {"source": "UW LiveOcean via NANOOS/IOOS THREDDS", "server": base,
             "run": iso(run), "level": "surface", "hidden": True,
-            "forecast_end": iso(times[-1]), "cells": cells, "reused": False}
+            "forecast_end": iso(max(t for t in times if t)), "cells": cells, "reused": False}
 
 
 def fetch(ctx=None) -> dict:
