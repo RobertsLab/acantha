@@ -1,6 +1,6 @@
 // "Today at Thorndyke" side panel: alerts, decision flags, tide/weather/rain/sensor/water cards.
 import {
-  loadAll, fmtTime, fmtDayTime, fmtDay, ago, num, compass, el, toDate, tideAt, isDaylight,
+  load, loadAll, TZ, fmtTime, fmtDayTime, fmtDay, ago, num, compass, el, toDate, tideAt, isDaylight,
   nearestHour, latestValue, getSettings, saveSettings, DEFAULTS, uplotTz, nightShade, nowLine,
   cssVar, sourceBadge, sensorChart,
 } from "./common.js";
@@ -8,6 +8,7 @@ import {
 const $ = (id) => document.getElementById(id);
 
 const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors"]);
+const NORMAL = await load("liveocean_climatology", "baseline/liveocean_climatology.json");
 let S = getSettings();
 
 function render() {
@@ -303,12 +304,45 @@ function waterLatest() {
   return st ? { ...st.latest, station: st } : null;
 }
 
+// Compare the current reading with LiveOcean's monthly surface climatology at the bay mouth.
+const cToF = (c) => (c == null ? null : c * 9 / 5 + 32);
+const signed = (v, d) => `${v >= 0 ? "+" : "−"}${num(Math.abs(v), d)}`;
+
+function renderNormal(latest) {
+  const cell = NORMAL?.cells?.find((c) => c.id === "thorndyke");
+  if (!cell) return null;
+  const when = latest?.t ? toDate(latest.t) : new Date();
+  const month = Number(new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "numeric" }).format(when));
+  const monthName = new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "long" }).format(when);
+  const m = cell.months.find((x) => x.month === month);
+  if (!m) return null;
+  const normF = cToF(m.surface.temp_c);
+  const parts = [];
+  if (latest?.water_temp_f != null && normF != null) {
+    parts.push(`${signed(latest.water_temp_f - normF, 1)}°F vs. normal (${num(normF, 1)}°F)`);
+  }
+  if (latest?.salinity_psu != null && m.surface.salt != null) {
+    parts.push(`salinity ${signed(latest.salinity_psu - m.surface.salt, 1)} (${num(m.surface.salt, 1)})`);
+  }
+  const head = parts.length
+    ? `${latest.station?.name || "Reading"}: ${parts.join(", ")}`
+    : `${monthName} normal: ${num(normF, 1)}°F, salinity ${num(m.surface.salt, 1)}`;
+  const far = latest?.station?.distance_km > 15 ? ` ${latest.station.name} is ${latest.station.distance_km} km away, so compare loosely.` : "";
+  return el("div", { style: "margin-bottom:8px" },
+    el("div", { class: "small" }, head),
+    el("div", { class: "small muted" },
+      `Normal = LiveOcean model ${monthName} surface average (${NORMAL.years}) at the Thorndyke Bay mouth; ` +
+      `bottom oxygen normal ${num(m.bottom.do_mgl, 1)} mg/L at ${num(m.bottom.depth_m, 0)} m.${far}`));
+}
+
 function renderWater() {
   $("water-badge").replaceChildren(sourceBadge(D.meta, "water"));
   const stations = (D.water?.stations || []).filter((s) => s.latest);
+  const normal = renderNormal(waterLatest());
   if (!stations.length) {
     return $("water-now").replaceChildren(el("p", { class: "muted small" },
-      "No recent water-quality observations near Thorndyke Bay. On-site sensors are planned for Phase 2."));
+      "No recent water-quality observations near Thorndyke Bay. On-site sensors are planned for Phase 2."),
+      ...(normal ? [normal] : []));
   }
   $("water-now").replaceChildren(...stations.slice(0, 3).map((s) => el("div", { style: "margin-bottom:8px" },
     el("div", { class: "row" },
@@ -316,6 +350,7 @@ function renderWater() {
       el("div", { class: "stat" }, el("div", { class: "label" }, "Salinity"), el("div", { class: "value" }, `${num(s.latest.salinity_psu, 1)}`)),
       el("div", { class: "stat" }, el("div", { class: "label" }, "Oxygen"), el("div", { class: "value" }, s.latest.do_mgl == null ? "—" : `${num(s.latest.do_mgl, 1)} mg/L`))),
     el("div", { class: "small muted" }, `${s.name}${s.distance_km != null ? ` (${s.distance_km} km)` : ""}${s.latest.depth_m != null ? `, ${num(s.latest.depth_m, 0)} m depth` : ""}, ${ago(s.latest.t)}`))),
+    ...(normal ? [normal] : []),
     ...(D.water.notes || []).map((n) => el("div", { class: "small muted" }, n)));
 }
 
