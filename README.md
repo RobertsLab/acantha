@@ -44,12 +44,17 @@ ingest/
                      (JSON only for now; not shown on the site yet, see docs/liveocean-plan.md)
     sensors.py       farm LoRaWAN temperature nodes via The Things Network
                      (SENSORS_MOCK=1 python3 ingest/fetch.py --only sensors for fake data)
+imagery/             satellite pipeline (needs numpy/rasterio: pip install -r imagery/requirements.txt)
+  run.py             Sentinel-2 true color + clear-sky % + tide at capture -> imagery.json
+  grid.py            shared UTM 10N 10 m grid every sensor/model output is resampled onto
+                     (published hidden, not shown on the site yet; see docs/imagery-plan.md)
 web/
   index.html         map + "Today at Thorndyke" panel
   tides.html         low-tide work-window calendar with .ics export
   about.html         data sources and freshness
   js/, css/
-.github/workflows/update.yml   scheduled fetch + Pages deploy
+.github/workflows/update.yml   scheduled fetch + Pages deploy (copies the imagery-data branch in)
+.github/workflows/imagery.yml  twice-daily imagery build -> imagery-data branch
 ```
 
 ## Adding a data source

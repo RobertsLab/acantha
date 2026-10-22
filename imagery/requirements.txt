@@ -1,0 +1,6 @@
+# Satellite imagery pipeline (imagery/). Kept apart from ingest/, which is stdlib-only.
+numpy>=1.26
+pillow>=10
+planetary-computer>=1.0
+pystac-client>=0.8
+rasterio>=1.4

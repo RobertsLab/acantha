@@ -38,6 +38,15 @@ jobs:
           TTN_APP_ID: ${{ vars.TTN_APP_ID }}
           TTN_API_KEY: ${{ secrets.TTN_API_KEY }}
 
+      - name: Add satellite imagery (hidden; built by imagery.yml)
+        run: |
+          if git fetch --depth 1 origin imagery-data; then
+            mkdir -p web/data/imagery
+            git archive FETCH_HEAD | tar -x -C web/data/imagery
+          else
+            echo "No imagery-data branch yet."
+          fi
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
