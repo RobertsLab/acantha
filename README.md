@@ -43,7 +43,8 @@ ingest/
     liveocean.py     UW LiveOcean model surface temp/salinity nowcast + forecast via OPeNDAP
                      (JSON only for now; not shown on the site yet, see docs/liveocean-plan.md)
     sensors.py       farm LoRaWAN temperature nodes via The Things Network
-                     (SENSORS_MOCK=1 python3 ingest/fetch.py --only sensors for fake data)
+                     (SENSORS_MOCK=1 python3 ingest/fetch.py --only sensors for fake data;
+                     adding gateways and sensors: docs/sensors.md)
 imagery/             satellite pipeline (needs numpy/rasterio: pip install -r imagery/requirements.txt)
   run.py             Sentinel-2 true color + clear-sky % + tide at capture -> imagery.json
   grid.py            shared UTM 10N 10 m grid every sensor/model output is resampled onto

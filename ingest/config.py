@@ -26,7 +26,8 @@ BBOX = {"xmin": -122.85, "ymin": 47.72, "xmax": -122.62, "ymax": 47.90}
 
 # On-farm sensors (Phase 2), read from The Things Network (TTN) Storage
 # Integration. Credentials come from the environment and are never committed:
-#   TTN_APP_ID, TTN_API_KEY   (GitHub Actions secrets in CI)
+#   TTN_APP_ID, TTN_API_KEY   (GitHub Actions variable and secret in CI)
+# How to add gateways and sensors: docs/sensors.md
 #   SENSORS_MOCK=1            generate realistic fake data instead (no hardware needed)
 TTN_CLUSTER = "nam1"          # North America: nam1.cloud.thethings.network
 SENSOR_RETENTION_DAYS = 7     # history kept in the published sensors.json
