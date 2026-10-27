@@ -1,4 +1,4 @@
-"""Satellite imagery for the Thorndyke Bay portal (hidden: published, not shown yet).
+"""Satellite imagery for the Thorndyke Bay portal (true-color map layer and dashboard card).
 
 Usage:
     pip install -r imagery/requirements.txt
@@ -135,7 +135,7 @@ def main() -> int:
     latest_clear = next((s["id"] for s in ordered if s["products"].get("truecolor")
                          and (s["site_clear_pct"] or 0) >= LATEST_CLEAR_SITE_PCT
                          and s["site_coverage_pct"] >= 99), None)
-    index = {"generated_at": iso(now), "hidden": True, "grid": GRID.describe(),
+    index = {"generated_at": iso(now), "grid": GRID.describe(),
              "site_radius_m": SITE_RADIUS_M, "tide_station": TIDE_STATION, "tide_datum": "MLLW",
              "latest_clear": latest_clear, "scenes": ordered, "errors": errors,
              "attribution": "Contains modified Copernicus Sentinel data " + str(now.year)}

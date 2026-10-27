@@ -52,6 +52,8 @@ export const DEFAULTS = {
   heatF: 75,          // air temp at low tide that raises a heat-exposure flag
   rainIn24h: 1.0,     // placeholder — set to your growing area's DOH rule
   gustMph: 20,        // gust that raises a wind flag
+  vibrioF: 60,        // water temp in Vibrio season (May–Sept) that raises a flag
+  freshenPsu: 1.0,    // daily-mean drop in model salinity at the bay mouth that adds a runoff note
 };
 
 export function getSettings() {
@@ -308,3 +310,9 @@ export function liveoceanChart(box, lo, cellId, { width, height = 170, legend = 
       ...overlays.map((o) => ({ label: o.name, stroke: cssVar("--series-2"), width: 1, spanGaps: true, value: f1("°F") }))],
   }, [xs, cell.series.map((r) => r.temp_f), cell.series.map((r) => r.salt), ...overlays.map((o) => o.ys)], box);
 }
+
+// ---------- satellite imagery ----------
+// Scenes that have a true-color product, newest first (imagery.json is already ordered that way).
+export const satScenes = (imagery) => (imagery?.scenes || []).filter((s) => s.products?.truecolor?.path);
+export const satLabel = (s) =>
+  `${fmtDay(s.datetime)} · ${num(s.site_clear_pct, 0)}% clear · tide ${num(s.tide_ft, 1)} ft`;

@@ -61,7 +61,7 @@ jobs:
             git -C ../archive push origin sensor-data
           fi
 
-      - name: Add satellite imagery (hidden; built by imagery.yml)
+      - name: Add satellite imagery (built by imagery.yml)
         run: |
           if git fetch --depth 1 origin imagery-data; then
             mkdir -p web/data/imagery

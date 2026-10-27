@@ -42,19 +42,35 @@
       </ul>
     </section>
     <section class="card">
+      <h2>Satellite imagery</h2>
+      <p>The <b>Satellite view</b> map layer and the <b>Satellite</b> card show true-color
+        <a href="https://sentiwiki.copernicus.eu/web/s2-mission" target="_blank" rel="noopener">Copernicus Sentinel-2</a>
+        images of the bay at 10 m, built twice a day from the
+        <a href="https://earth-search.aws.element84.com/v1" target="_blank" rel="noopener">Earth Search</a> and
+        <a href="https://planetarycomputer.microsoft.com/" target="_blank" rel="noopener">Planetary Computer</a> catalogs.
+        <span id="sat-attribution">Contains modified Copernicus Sentinel data.</span></p>
+      <ul class="small">
+        <li><b>A pass every 2–3 days, late morning.</b> Each scene is tagged with the predicted Lofall tide at capture,
+          which decides whether the beds show exposed.</li>
+        <li><b>Clouds.</b> "Clear at the bay" is the cloud-free share within 1.5 km of the site. Clear passes are rare from November to March.</li>
+        <li><b>True color only, for now.</b> Turbidity and chlorophyll products are planned once they have been checked against rain events.</li>
+        <li><b>Status:</b> <span id="sat-status">loading…</span></li>
+      </ul>
+    </section>
+    <section class="card">
       <h2>About this portal</h2>
       <p>This portal collects public environmental data for Thorndyke Bay (Hood Canal, Jefferson County, WA)
         to help oyster growers plan day-to-day work: tide windows, heat exposure at low tide, rain, wind,
         water conditions, and shellfish status. Data updates automatically about every 20 minutes.</p>
-      <p><b>Coming next:</b> more on-site weather and water sensors at farm sites, satellite views of the bay,
-        and text/email alerts.</p>
+      <p><b>Coming next:</b> more on-site weather and water sensors at farm sites, satellite turbidity and
+        chlorophyll products, and text/email alerts.</p>
       <p class="disclaimer">Advisory only. Official shellfish harvest closures come from the
         <a href="https://doh.wa.gov/community-and-environment/shellfish">WA Department of Health</a>.
         Tide predictions and forecasts can be wrong. Use your own judgment on the beach.</p>
     </section>
   </main>
   <script type="module">
-    import { loadAll, ago, el, fmtDayTime, num, modelVsObs } from "./js/common.js";
+    import { load, loadAll, ago, el, fmtDay, fmtDayTime, num, modelVsObs, satScenes } from "./js/common.js";
     const FEEDS = [
       ["tides", "Tide predictions", "NOAA CO-OPS (Lofall 9445088)", "https://tidesandcurrents.noaa.gov/stationhome.html?id=9445088"],
       ["forecast", "Weather forecast (hourly, 7 day)", "NWS api.weather.gov, grid SEW 114,80", "https://www.weather.gov/sew/"],
@@ -71,6 +87,14 @@
     const cell = liveocean?.cells?.find((c) => c.id === "thorndyke");
     const pt = (water?.stations || []).find((s) => s.series?.length);
     const check = cell && pt && modelVsObs(cell, pt.series);
+    const imagery = await load("imagery", "data/imagery/imagery.json");
+    const scenes = satScenes(imagery);
+    if (imagery?.attribution) document.getElementById("sat-attribution").textContent = imagery.attribution + ".";
+    document.getElementById("sat-status").textContent = imagery
+      ? `last build ${ago(imagery.generated_at)}; ${imagery.scenes.length} passes in the last 30 days, ${scenes.length} with imagery` +
+        (imagery.latest_clear ? `; last clear view ${fmtDay(scenes.find((s) => s.id === imagery.latest_clear)?.datetime || scenes[0].datetime)}` : "") +
+        (imagery.errors?.length ? `; ${imagery.errors.length} scene error(s) in the last build` : "") + "."
+      : "no imagery published yet.";
     document.getElementById("model-check").textContent = check
       ? `over the past 7 days the model surface temperature at the bay mouth ran ${check.bias >= 0 ? "+" : "−"}${num(Math.abs(check.bias), 1)}°F ` +
         `against the ${pt.name} observation${pt.distance_km ? ` (${pt.distance_km} km away)` : ""}, with a typical hour-to-hour difference of ${num(check.rmse, 1)}°F (${check.n} hours compared).`
@@ -85,7 +109,10 @@
         el("td", {}, url ? el("a", { href: url, target: "_blank", rel: "noopener" }, src) : src),
         el("td", {}, status, s && !s.ok ? el("div", { class: "small muted" }, s.error) : ""),
         el("td", {}, el("a", { href: `data/${k}.json` }, `${k}.json`)));
-    }));
+    }), el("tr", {}, el("td", {}, "Satellite imagery"),
+      el("td", {}, el("a", { href: "https://earth-search.aws.element84.com/v1", target: "_blank", rel: "noopener" }, "Copernicus Sentinel-2 L2A via Earth Search (AWS), Planetary Computer fallback")),
+      el("td", {}, imagery ? el("span", { class: "badge ok" }, `OK · ${ago(imagery.generated_at)}`) : el("span", { class: "badge muted" }, "not built")),
+      el("td", {}, el("a", { href: "data/imagery/imagery.json" }, "imagery.json"))));
   </script>
 </body>
 </html>

@@ -49,7 +49,7 @@ ingest/
 imagery/             satellite pipeline (needs numpy/rasterio: pip install -r imagery/requirements.txt)
   run.py             Sentinel-2 true color + clear-sky % + tide at capture -> imagery.json
   grid.py            shared UTM 10N 10 m grid every sensor/model output is resampled onto
-                     (published hidden, not shown on the site yet; see docs/imagery-plan.md)
+                     (shown as the "Satellite view" map layer and Satellite card; see docs/imagery-plan.md)
 baseline/            one-off: LiveOcean monthly climatology (2014-2024) at the model cells
   liveocean_climatology.py  surface + bottom temp/salinity/oxygen -> web/baseline/liveocean_climatology.json
                      (needs h5py/fsspec: pip install -r baseline/requirements.txt; committed, not re-run)

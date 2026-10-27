@@ -2,13 +2,14 @@
 import {
   load, loadAll, TZ, fmtTime, fmtDayTime, fmtDay, ago, num, compass, el, toDate, tideAt, isDaylight,
   nearestHour, latestValue, getSettings, saveSettings, DEFAULTS, uplotTz, nightShade, nowLine,
-  cssVar, sourceBadge, sensorChart, liveoceanChart, modelVsObs,
+  cssVar, sourceBadge, sensorChart, liveoceanChart, modelVsObs, satScenes,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 
 const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors", "liveocean"]);
 const NORMAL = await load("liveocean_climatology", "baseline/liveocean_climatology.json");
+D.imagery = await load("imagery", "data/imagery/imagery.json");
 let S = getSettings();
 
 function render() {
@@ -20,6 +21,7 @@ function render() {
   renderSensors();
   renderWater();
   renderModel();
+  renderSatellite();
   renderShellfish();
 }
 
@@ -98,11 +100,29 @@ function renderFlags() {
     add("warn", `Sensor ${s.status}: ${s.name}${tag}`, `Last reading ${ago(s.last_seen)}. Check battery, mount, or gateway.`);
   }
 
-  // Water temperature (Vibrio season)
-  const wt = waterLatest()?.water_temp_f;
-  const month = new Date().getMonth() + 1;
-  if (wt != null && month >= 5 && month <= 9 && wt >= 60) {
-    add("warn", `Water ${num(wt, 1)}°F during Vibrio season`, "Follow your Vibrio control plan for time-to-temperature after harvest.");
+  // Water temperature (Vibrio season, May–Sept). Observed if it is current, else the LiveOcean
+  // model surface value; the model forecast adds a heads-up when warm water is on the way.
+  const month = Number(new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "numeric" }).format(new Date()));
+  if (month >= 5 && month <= 9) {
+    const obs = waterLatest();
+    const fresh = obs?.water_temp_f != null && Date.now() - toDate(obs.t) < 6 * 3600e3;
+    const cell = modelCell(), cur = cell && nearestHour(cell.series, Date.now());
+    const wt = fresh ? obs.water_temp_f : cur?.temp_f;
+    const src = fresh ? `Observed at ${obs.station.name}` : "LiveOcean model surface estimate (no current observation)";
+    const peak = modelPeak(cell, 72);
+    if (wt != null && wt >= S.vibrioF) {
+      add("warn", `Water ${num(wt, 1)}°F during Vibrio season`, `${src}. Follow your Vibrio control plan for time-to-temperature after harvest.`);
+    } else if (peak && peak.temp_f >= S.vibrioF) {
+      add("warn", `Water forecast to reach ${num(peak.temp_f, 1)}°F ${fmtDayTime(peak.t)}`,
+        "LiveOcean model surface temperature. Vibrio season: plan time-to-temperature for harvests on warm days.");
+    }
+  }
+
+  // Freshening at the bay mouth (model salinity): runoff context for the closure watch, not a closure call.
+  const fresh = modelFreshening(modelCell());
+  if (fresh) {
+    add("", `Model shows freshening at the bay mouth: salinity −${num(fresh.drop, 1)} ${fresh.when}`,
+      "LiveOcean surface salinity, daily average. A freshwater-runoff signal for context only; closures come from DOH.");
   }
 
   if (!ul.children.length) add("good", "No flags", "Conditions within your thresholds.");
@@ -358,6 +378,29 @@ function renderWater() {
 // ---------- water forecast (LiveOcean model) ----------
 const modelCell = () => D.liveocean?.cells?.find((c) => c.id === "thorndyke");
 
+// Warmest model hour in the next `hours`.
+function modelPeak(cell, hours) {
+  const now = Date.now();
+  return (cell?.series || []).filter((r) => r.temp_f != null && toDate(r.t) > now && toDate(r.t) - now <= hours * 3600e3)
+    .reduce((m, r) => (m == null || r.temp_f > m.temp_f ? r : m), null);
+}
+
+// Daily-mean salinity drop of at least S.freshenPsu: past 24 h vs. the 24 h before, or the next 48 h vs. the past 24 h.
+function modelFreshening(cell) {
+  if (!cell) return null;
+  const now = Date.now(), h = 3600e3;
+  const mean = (from, to) => {
+    const v = cell.series.filter((r) => r.salt != null && toDate(r.t) > now + from * h && toDate(r.t) <= now + to * h).map((r) => r.salt);
+    return v.length >= 12 ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  };
+  const before = mean(-48, -24), last = mean(-24, 0), next = mean(0, 24), later = mean(24, 48);
+  const past = before != null && last != null ? before - last : 0;
+  const ahead = last != null ? Math.max(...[next, later].filter((v) => v != null).map((v) => last - v), 0) : 0;
+  if (past >= S.freshenPsu && past >= ahead) return { drop: past, when: "over the past day" };
+  if (ahead >= S.freshenPsu) return { drop: ahead, when: "forecast in the next 2 days" };
+  return null;
+}
+
 function renderModel() {
   const cell = modelCell();
   $("model-card").hidden = !cell;
@@ -391,6 +434,32 @@ function renderModel() {
   const obs = [];
   if (pt) obs.push({ name: pt.name.replace(" (NOAA)", ""), series: pt.series });
   liveoceanChart($("model-chart"), D.liveocean, "thorndyke", { height: 180, sun: D.sun, obs });
+}
+
+// ---------- satellite ----------
+function renderSatellite() {
+  const scenes = satScenes(D.imagery);
+  $("sat-card").hidden = !scenes.length;
+  if (!scenes.length) return;
+  const gen = D.imagery.generated_at;
+  const stale = Date.now() - toDate(gen) > 36 * 3600e3;
+  $("sat-badge").replaceChildren(el("span", { class: stale ? "badge warn" : "badge ok" }, `updated ${ago(gen)}`));
+  const clear = scenes.find((s) => s.id === D.imagery.latest_clear) || scenes[0];
+  const latest = scenes[0];
+  const days = Math.round((Date.now() - toDate(clear.datetime)) / 86400e3);
+  const link = (s, text) => el("a", { href: `#s2=${s.id}`, onclick: () => scrollTo({ top: 0, behavior: "smooth" }) }, text);
+  $("sat-now").replaceChildren(
+    el("div", { class: "row" },
+      el("div", { class: "stat" }, el("div", { class: "label" }, "Last clear view"),
+        el("div", { class: "value" }, link(clear, `${fmtDay(clear.datetime)} ${fmtTime(clear.datetime)}`))),
+      el("div", { class: "stat" }, el("div", { class: "label" }, "Clear at the bay"), el("div", { class: "value" }, `${num(clear.site_clear_pct, 0)}%`)),
+      el("div", { class: "stat" }, el("div", { class: "label" }, "Tide at capture"), el("div", { class: "value" }, `${num(clear.tide_ft, 1)} ft`))),
+    el("div", { class: "small muted" },
+      `Sentinel-2 true color, 10 m. ${days >= 10 ? `No clear pass in ${days} days (clouds). ` : ""}` +
+      `${(D.imagery.scenes || []).length} passes in the last 30 days, ${scenes.length} with usable imagery` +
+      (latest.id !== clear.id ? `; latest pass ${fmtDay(latest.datetime)} was ${num(latest.site_clear_pct, 0)}% clear` : "") + ". ",
+      link(clear, "Show on map →")),
+  );
 }
 
 // ---------- shellfish ----------
@@ -430,6 +499,8 @@ function renderSettings() {
     ["heatF", "Heat-exposure air temp (°F) ≥", 1],
     ["gustMph", "Wind gust flag (mph) ≥", 1],
     ["rainIn24h", "Rain closure watch (in, 24 h) ≥", 0.05],
+    ["vibrioF", "Vibrio water temp (°F, May–Sept) ≥", 1],
+    ["freshenPsu", "Model salinity drop note (per day) ≥", 0.1],
   ];
   form.replaceChildren(
     ...fields.flatMap(([k, label, step]) => [

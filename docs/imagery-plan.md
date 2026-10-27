@@ -3,11 +3,14 @@
 Goal: add free satellite imagery (Sentinel-2, Sentinel-1, Landsat) for Thorndyke Bay, plus OlmoEarth embeddings and
 fine-tuned model outputs, computed over one shared grid. As with LiveOcean, products run in hidden mode before they're shown.
 
-## Status (2026-10-21)
+## Status (2026-10-26)
 
-Steps 1–3 are built: `imagery/` (grid, STAC with fallback, S2 true color, clear-sky %, tide at capture),
-`.github/workflows/imagery.yml` → `imagery-data` branch, and the copy step in `update.yml`. Products are published
-to `web/data/imagery/` but no page reads them yet.
+Steps 1–3 and the true-color part of step 6 are built: `imagery/` (grid, STAC with fallback, S2 true color,
+clear-sky %, tide at capture), `.github/workflows/imagery.yml` → `imagery-data` branch, the copy step in
+`update.yml`, and on the site a **Satellite view** map layer with a scene picker (capture time, clear % at the
+bay, tide at capture), a **Satellite** dashboard card with the last clear view linking to the map, and a Data
+page section with the Copernicus attribution. Step 4 (turbidity, NDCI, Landsat, S1) and the step 5 validation
+are next; the card and map layers for those products are the rest of step 6.
 
 Implementation notes:
 

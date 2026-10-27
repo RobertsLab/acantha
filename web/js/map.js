@@ -1,7 +1,8 @@
 // Interactive map: basemaps, nautical chart overlay, stations, shellfish areas.
-import { loadAll, fmtTime, fmtDay, fmtDayTime, ago, num, compass, el, latestValue, tideAt, cssVar, sensorChart, liveoceanChart, nearestHour, toDate } from "./common.js";
+import { load, loadAll, fmtTime, fmtDay, fmtDayTime, ago, num, compass, el, latestValue, tideAt, cssVar, sensorChart, liveoceanChart, nearestHour, toDate, satScenes, satLabel } from "./common.js";
 
 const D = await loadAll(["meta", "tides", "observations", "water", "shellfish", "sensors", "liveocean"]);
+D.imagery = await load("imagery", "data/imagery/imagery.json");
 const site = D.meta?.site || { name: "Thorndyke Bay", lat: 47.806, lon: -122.735 };
 
 const NOAA_ENC =
@@ -182,7 +183,58 @@ map.on("load", () => {
   map.on("mouseleave", "points", () => (map.getCanvas().style.cursor = ""));
 
   map.addControl(new LayerControl(), "top-right");
+  sat.init();
 });
+
+// ---------- satellite scenes (Sentinel-2 true color from the imagery pipeline) ----------
+// One image source whose URL and corners are swapped as the date changes. A URL hash of
+// #s2=<scene id> (set by the dashboard card) turns the layer on and selects that scene.
+const sat = {
+  on: false, scenes: satScenes(D.imagery), current: null,
+  select: el("select", { class: "radar-mode", "aria-label": "Satellite scene date" }),
+  caption: el("div", { class: "muted small" }),
+  init() {
+    if (!this.scenes.length) return;
+    this.select.replaceChildren(...this.scenes.map((s) => el("option", { value: s.id }, satLabel(s))));
+    if (this.scenes.some((s) => s.id === D.imagery.latest_clear)) this.select.value = D.imagery.latest_clear;
+    this.select.addEventListener("change", () => this.show(this.select.value));
+    this.check.addEventListener("change", (e) => this.toggle(e.target.checked));
+    addEventListener("hashchange", () => this.fromHash());
+    this.fromHash();
+  },
+  fromHash() {
+    const id = new URLSearchParams(location.hash.slice(1)).get("s2");
+    if (!id || !this.scenes.some((s) => s.id === id)) return;
+    this.select.value = id;
+    this.check.checked = true;
+    this.toggle(true); // shows the selected scene if none is up yet
+    if (this.current !== id) this.show(id);
+  },
+  toggle(on) {
+    this.on = on;
+    this.player.hidden = !on;
+    if (on && !this.current) this.show(this.select.value);
+    if (map.getLayer("s2")) map.setLayoutProperty("s2", "visibility", on ? "visible" : "none");
+  },
+  show(id) {
+    const s = this.scenes.find((x) => x.id === id);
+    if (!s) return;
+    const url = `data/imagery/${s.products.truecolor.path}`, coordinates = s.products.truecolor.corners;
+    if (!map.getSource("s2")) {
+      map.addSource("s2", { type: "image", url, coordinates });
+      const before = ["areas-fill", "biotoxin-fill", "model", "points"].find((l) => map.getLayer(l));
+      map.addLayer({ id: "s2", type: "raster", source: "s2", paint: { "raster-fade-duration": 0 } }, before);
+    } else {
+      map.getSource("s2").updateImage({ url, coordinates });
+    }
+    this.current = id;
+    // Image sources can't carry attribution in the style, so the Copernicus credit sits with the picker.
+    this.caption.replaceChildren(`${fmtDay(s.datetime)} ${fmtTime(s.datetime)} · ${num(s.site_clear_pct, 0)}% clear at the bay · tide ${num(s.tide_ft, 1)} ft`,
+      el("div", {}, D.imagery.attribution || "Contains modified Copernicus Sentinel data"));
+  },
+};
+sat.check = el("input", { type: "checkbox" });
+sat.player = el("div", { class: "radar-player", hidden: "" }, sat.select, sat.caption);
 
 // ---------- radar loop ----------
 const radar = {
@@ -347,6 +399,8 @@ class LayerControl {
       check(["chart"], "Nautical chart", false),
       el("label", {}, el("input", { type: "checkbox", onchange: (e) => radar.toggle(e.target.checked) }), " Weather radar"),
       radar.player,
+      sat.scenes.length ? el("label", {}, sat.check, " Satellite view (Sentinel-2)") : null,
+      sat.scenes.length ? sat.player : null,
       check(["areas-fill", "areas-line"], "Commercial growing areas", true),
       check(["biotoxin-fill", "biotoxin-line"], "Recreational biotoxin zones", false),
       check(["points", "labels"], "Stations", true),
