@@ -193,10 +193,10 @@ the temperatures, only the in/out-of-water labels and the in-bag heat flags.
 
 ## Limits to keep in mind
 
-- **History is 7 days.** TTN's Message storage only keeps a short window, and the site keeps
-  7 days in `sensors.json` (`SENSOR_RETENTION_DAYS`). There is no long-term archive yet; that's
-  the Phase 2 database in PLAN.md. If the workflow stops running for longer than storage keeps
-  data, those readings are lost.
+- **The site shows 7 days; the archive keeps everything.** TTN's Message storage only keeps a
+  short window and `sensors.json` keeps 7 days (`SENSOR_RETENTION_DAYS`), so every run also
+  appends the readings to the archive (below). If the workflow stops for longer than TTN
+  storage keeps data, the readings from that gap are lost from both.
 - **Storage starts empty.** Message storage only keeps uplinks received after it was activated.
 - **GitHub delays scheduled runs.** The 20-minute cron sometimes runs an hour late, so a sensor
   can briefly show "stale" on the site while it's fine in TTN.
@@ -204,6 +204,30 @@ the temperatures, only the in/out-of-water labels and the in-bag heat flags.
   `web/js/common.js`). Past 4 sensors, colors repeat; group sensors by site or add colors then.
 - **Many sensors.** The fetch pages through storage 1000 uplinks at a time, so volume isn't a
   problem: 20 sensors at 20-minute intervals is about 1,440 uplinks a day.
+
+## The archive (`sensor-data` branch)
+
+Every reading is kept permanently on the `sensor-data` branch of this repo, written by the
+"Archive sensor readings" step of `.github/workflows/update.yml` (`ingest/archive_sensors.py`):
+
+- `readings/YYYY-MM.csv`: one row per reading by UTC month, with temperature, the
+  out-of-water flag, QC flag and tests, battery, RSSI and SNR. Column definitions are in the
+  branch's `README.md`.
+- `stations.json`: sensor names, positions and probe elevations; older versions are in the
+  branch history.
+
+Readings from the last 7 days are rewritten on each run so their QC flags end up final. Mock
+data is never archived. The step can't block the site deploy: if it fails, the run still
+succeeds with a warning, and the readings are picked up by the next run that works, as long as
+they're still within the 7-day window.
+
+Read it without cloning:
+
+```bash
+curl -sL https://raw.githubusercontent.com/RobertsLab/acantha/sensor-data/readings/2026-10.csv
+```
+
+In R: `read.csv("https://raw.githubusercontent.com/RobertsLab/acantha/sensor-data/readings/2026-10.csv")`.
 
 ## Troubleshooting
 

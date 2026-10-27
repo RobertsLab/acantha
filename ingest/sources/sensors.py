@@ -39,6 +39,9 @@ FLAT_EPS, FLAT_SUSPECT, FLAT_FAIL = 0.005, 8, 16   # consecutive near-identical 
 
 MOCK_INTERVAL_MIN = 15
 
+# Per-reading fields published in sensors.json (and archived by archive_sensors.py).
+SERIES_KEYS = ("t", "temp_c", "temp_f", "exposed", "qc", "qc_tests", "battery_v", "rssi", "snr")
+
 
 # ---------- TTN ----------
 
@@ -192,7 +195,7 @@ def _station(sensor: dict, rows: list[dict], hilo, tide_fn, now: datetime, prev:
             r.setdefault("exposed", None)  # keep what an earlier run computed
         r["temp_f"] = c_to_f(r["temp_c"])
     _qc(rows)
-    series = [{k: r[k] for k in ("t", "temp_c", "temp_f", "exposed", "qc", "qc_tests") if k in r} for r in rows]
+    series = [{k: r[k] for k in SERIES_KEYS if r.get(k) is not None} for r in rows]
     good = [r for r in series if r["qc"] in (1, 2)]
     # Radio/battery health comes from the newest uplink; carried over if none arrived this run.
     radio = next((r for r in reversed(rows) if "rssi" in r), prev or {})
@@ -287,7 +290,7 @@ def fetch(ctx=None) -> dict:
         stations = []
         for s in SENSORS:
             old = prev.get(s["id"], {})
-            merged = {r["t"]: {"t": r["t"], "temp_c": r["temp_c"], "exposed": r.get("exposed")}
+            merged = {r["t"]: {k: r.get(k) for k in ("t", "temp_c", "exposed", "battery_v", "rssi", "snr")}
                       for r in old.get("series", [])}
             merged.update({r["t"]: r for r in new[s["id"]]})
             stations.append(_station(s, list(merged.values()), hilo, None, now, prev=old))

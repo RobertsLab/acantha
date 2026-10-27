@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # the sensor archive step pushes to the sensor-data branch
   pages: write
   id-token: write
 
@@ -37,6 +37,29 @@ jobs:
           # Farm sensors via The Things Network; unset until hardware is deployed.
           TTN_APP_ID: ${{ vars.TTN_APP_ID }}
           TTN_API_KEY: ${{ secrets.TTN_API_KEY }}
+
+      - name: Archive sensor readings (sensor-data branch)
+        # Permanent copy of every reading; the site keeps only 7 days. Never blocks the deploy.
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          if git fetch --depth 1 origin sensor-data; then
+            git worktree add -B sensor-data ../archive FETCH_HEAD
+          else
+            git worktree add --detach ../archive
+            git -C ../archive checkout --orphan sensor-data
+            git -C ../archive rm -rfq .
+          fi
+          python ingest/archive_sensors.py web/data/sensors.json ../archive
+          git -C ../archive add -A
+          if git -C ../archive diff --cached --quiet; then
+            echo "No new sensor readings."
+          else
+            git -C ../archive commit -qm "Sensor readings to $(date -u +%Y-%m-%dT%H:%MZ)"
+            git -C ../archive push origin sensor-data
+          fi
 
       - name: Add satellite imagery (hidden; built by imagery.yml)
         run: |
