@@ -3,4 +3,5 @@ t,device_id,temp_c,temp_f,exposed,qc,qc_tests,battery_v,rssi,snr
 2026-10-27T03:50:51Z,little-dragon-01,17.6,63.7,true,1,,,,
 2026-10-27T04:10:51Z,little-dragon-01,17.6,63.7,true,1,,,,
 2026-10-27T04:30:51Z,little-dragon-01,17.7,63.9,true,1,,3.618,-20,13.5
-2026-10-27T04:50:51Z,little-dragon-01,17.7,63.9,true,2,,3.618,-21,14
+2026-10-27T04:50:51Z,little-dragon-01,17.7,63.9,true,1,,3.618,-21,14
+2026-10-27T05:10:51Z,little-dragon-01,17.7,63.9,true,2,,3.618,-25,13.5
