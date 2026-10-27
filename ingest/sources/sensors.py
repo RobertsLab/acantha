@@ -42,9 +42,11 @@ MOCK_INTERVAL_MIN = 15
 
 # ---------- TTN ----------
 
-def _ttn_uplinks(app_id: str, api_key: str, after: datetime) -> list[dict]:
-    """Return uplink results from the TTN Storage Integration since `after`."""
-    q = urllib.parse.urlencode({"after": iso(after), "limit": 10000, "order": "received_at"})
+TTN_PAGE = 1000   # TTN rejects larger `limit` values
+
+
+def _ttn_page(app_id: str, api_key: str, after: datetime) -> list[dict]:
+    q = urllib.parse.urlencode({"after": iso(after), "limit": TTN_PAGE, "order": "received_at"})
     url = (f"https://{TTN_CLUSTER}.cloud.thethings.network/api/v3/as/applications/"
            f"{urllib.parse.quote(app_id)}/packages/storage/uplink_message?{q}")
     req = urllib.request.Request(url, headers={
@@ -55,7 +57,10 @@ def _ttn_uplinks(app_id: str, api_key: str, after: datetime) -> list[dict]:
     except urllib.error.HTTPError as e:
         # TTN puts the actual reason (bad token, missing rights, ...) in the JSON body.
         try:
-            msg = json.loads(e.read().decode())["error"]["message"]
+            err = json.loads(e.read().decode())["error"]
+            msg = err["message"]
+            for k, v in ((err.get("details") or [{}])[0].get("attributes") or {}).items():
+                msg = msg.replace("{" + k + "}", str(v))
         except Exception:
             msg = e.reason
         raise RuntimeError(f"TTN HTTP {e.code}: {msg}") from None
@@ -68,6 +73,18 @@ def _ttn_uplinks(app_id: str, api_key: str, after: datetime) -> list[dict]:
         if line:
             out.append(json.loads(line).get("result", {}))
     return out
+
+
+def _ttn_uplinks(app_id: str, api_key: str, after: datetime) -> list[dict]:
+    """Return uplink results from the TTN Storage Integration since `after`, paging as needed."""
+    out = []
+    while True:
+        page = _ttn_page(app_id, api_key, after)
+        out += page
+        last = page[-1].get("received_at") if page else None
+        if len(page) < TTN_PAGE or not last or parse_iso(last) <= after:
+            return out
+        after = parse_iso(last)
 
 
 def _pick(payload: dict, keys) -> float | None:
