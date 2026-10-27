@@ -266,6 +266,7 @@ def fetch(ctx=None) -> dict:
         by_id = {s["id"]: s for s in SENSORS}
         new: dict[str, list[dict]] = {s["id"]: [] for s in SENSORS}
         unknown = set()
+        skipped: dict[str, list] = {}   # device -> uplinks without a usable temperature
         for r in uplinks:
             dev = (r.get("end_device_ids") or {}).get("device_id")
             if dev not in by_id:
@@ -274,8 +275,15 @@ def fetch(ctx=None) -> dict:
             row = _parse_uplink(r, by_id[dev])
             if row:
                 new[dev].append(row)
+            else:
+                skipped.setdefault(dev, []).append(r.get("uplink_message") or {})
+        notes.append(f"TTN returned {len(uplinks)} uplinks since {iso(after)}")
         if unknown:
             notes.append(f"Ignored uplinks from devices not in config.SENSORS: {', '.join(sorted(map(str, unknown)))}")
+        for dev, ups in skipped.items():
+            last = ups[-1]
+            notes.append(f"{by_id[dev]['name']}: {len(ups)} uplinks had no temperature "
+                         f"(last: fPort {last.get('f_port')}, decoded {last.get('decoded_payload')})")
         stations = []
         for s in SENSORS:
             old = prev.get(s["id"], {})
