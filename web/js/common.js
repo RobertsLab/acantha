@@ -232,3 +232,79 @@ export function sensorChart(box, stations, { hours = 72, width, height = 160, le
       value: (u, v) => (v == null ? "—" : `${v.toFixed(1)}°F`) }))],
   }, [xs, ...ys], box);
 }
+
+// ---------- LiveOcean model ----------
+// The model is hourly. Observations are averaged onto the model hours (±30 min) so the
+// chart has one x-axis and the model-vs-observation difference is a simple per-hour pair.
+export function onModelHours(xs, series, key) {
+  const sums = new Map();
+  for (const r of series || []) {
+    if (r[key] == null) continue;
+    const x = Math.round(toDate(r.t) / 3600e3) * 3600;
+    const s = sums.get(x) || [0, 0];
+    s[0] += r[key]; s[1]++;
+    sums.set(x, s);
+  }
+  return xs.map((x) => { const s = sums.get(x); return s ? s[0] / s[1] : null; });
+}
+
+// Mean and RMS difference (model − observed, °F) over the past `hours` where both exist.
+export function modelVsObs(cell, obsSeries, hours = 7 * 24) {
+  const now = Date.now() / 1e3;
+  const rows = (cell?.series || []).filter((r) => { const x = toDate(r.t) / 1e3; return x <= now && x >= now - hours * 3600; });
+  const xs = rows.map((r) => toDate(r.t) / 1e3);
+  const obs = onModelHours(xs, obsSeries, "water_temp_f");
+  const d = rows.map((r, i) => (r.temp_f != null && obs[i] != null ? r.temp_f - obs[i] : null)).filter((v) => v != null);
+  if (d.length < 12) return null;
+  const bias = d.reduce((a, b) => a + b, 0) / d.length;
+  const rmse = Math.sqrt(d.reduce((a, b) => a + b * b, 0) / d.length);
+  return { bias, rmse, n: d.length };
+}
+
+// uPlot plugin: shade the forecast part of the model run (after the run start).
+function forecastShade(fromTs) {
+  return {
+    hooks: {
+      drawClear: (u) => {
+        const { ctx, bbox } = u;
+        const a = Math.max(u.valToPos(fromTs, "x", true), bbox.left), b = bbox.left + bbox.width;
+        if (b <= a) return;
+        ctx.save();
+        ctx.fillStyle = cssVar("--series-1") + "12";
+        ctx.fillRect(a, bbox.top, b - a, bbox.height);
+        ctx.strokeStyle = cssVar("--muted");
+        ctx.setLineDash([2, 4]);
+        ctx.lineWidth = devicePixelRatio;
+        ctx.beginPath(); ctx.moveTo(a, bbox.top); ctx.lineTo(a, bbox.top + bbox.height); ctx.stroke();
+        ctx.restore();
+      },
+    },
+  };
+}
+
+// Model surface temperature (°F, left) and salinity (right) for one cell, with the forecast
+// period shaded. `obs` overlays observed water temperature: [{ name, series: [{t, water_temp_f}] }].
+export function liveoceanChart(box, lo, cellId, { width, height = 170, legend = true, sun, obs = [] } = {}) {
+  const cell = lo?.cells?.find((c) => c.id === cellId);
+  box.replaceChildren();
+  if (!cell?.series?.length) return box.append(el("p", { class: "muted small" }, "No model data."));
+  const xs = cell.series.map((r) => toDate(r.t) / 1e3);
+  const overlays = obs.filter((o) => o.series?.length).map((o) => ({ ...o, ys: onModelHours(xs, o.series, "water_temp_f") }))
+    .filter((o) => o.ys.some((v) => v != null));
+  const ink = cssVar("--muted"), grid = cssVar("--line");
+  const ax = { stroke: ink, grid: { stroke: grid, width: 1 }, ticks: { stroke: grid }, font: "11px system-ui" };
+  const plugins = [forecastShade(toDate(lo.run) / 1e3), nowLine()];
+  if (sun) plugins.unshift(nightShade(sun));
+  const f1 = (unit) => (u, v) => (v == null ? "—" : `${v.toFixed(1)}${unit}`);
+  return new uPlot({
+    width: width || box.clientWidth, height, tzDate: uplotTz, legend: { show: legend }, cursor: { y: false },
+    plugins,
+    scales: { x: { time: true }, y2: { range: (u, mn, mx) => [Math.floor(mn - 1), Math.ceil(mx + 1)] } },
+    axes: [{ ...ax }, { ...ax, label: "°F", size: 40, labelSize: 14 },
+      { ...ax, side: 1, scale: "y2", label: "salinity", grid: { show: false }, size: 44, labelSize: 14 }],
+    series: [{},
+      { label: "Model °F", stroke: cssVar("--series-1"), width: 2, value: f1("°F") },
+      { label: "Model salinity", scale: "y2", stroke: cssVar("--series-3"), width: 1.25, dash: [5, 3], value: f1("") },
+      ...overlays.map((o) => ({ label: o.name, stroke: cssVar("--series-2"), width: 1, spanGaps: true, value: f1("°F") }))],
+  }, [xs, cell.series.map((r) => r.temp_f), cell.series.map((r) => r.salt), ...overlays.map((o) => o.ys)], box);
+}

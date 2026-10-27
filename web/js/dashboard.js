@@ -2,12 +2,12 @@
 import {
   load, loadAll, TZ, fmtTime, fmtDayTime, fmtDay, ago, num, compass, el, toDate, tideAt, isDaylight,
   nearestHour, latestValue, getSettings, saveSettings, DEFAULTS, uplotTz, nightShade, nowLine,
-  cssVar, sourceBadge, sensorChart,
+  cssVar, sourceBadge, sensorChart, liveoceanChart, modelVsObs,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 
-const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors"]);
+const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors", "liveocean"]);
 const NORMAL = await load("liveocean_climatology", "baseline/liveocean_climatology.json");
 let S = getSettings();
 
@@ -19,6 +19,7 @@ function render() {
   renderRain();
   renderSensors();
   renderWater();
+  renderModel();
   renderShellfish();
 }
 
@@ -352,6 +353,44 @@ function renderWater() {
     el("div", { class: "small muted" }, `${s.name}${s.distance_km != null ? ` (${s.distance_km} km)` : ""}${s.latest.depth_m != null ? `, ${num(s.latest.depth_m, 0)} m depth` : ""}, ${ago(s.latest.t)}`))),
     ...(normal ? [normal] : []),
     ...(D.water.notes || []).map((n) => el("div", { class: "small muted" }, n)));
+}
+
+// ---------- water forecast (LiveOcean model) ----------
+const modelCell = () => D.liveocean?.cells?.find((c) => c.id === "thorndyke");
+
+function renderModel() {
+  const cell = modelCell();
+  $("model-card").hidden = !cell;
+  if (!cell) return;
+  $("model-badge").replaceChildren(sourceBadge(D.meta, "liveocean"));
+  const now = Date.now();
+  const cur = nearestHour(cell.series, now);
+  const ahead = cell.series.filter((r) => toDate(r.t) > now && toDate(r.t) - now <= 72 * 3600e3);
+  const range = (key, d) => {
+    const v = ahead.map((r) => r[key]).filter((x) => x != null);
+    return v.length ? `${num(Math.min(...v), d)}–${num(Math.max(...v), d)}` : "—";
+  };
+  const stat = (label, v) => el("div", { class: "stat" }, el("div", { class: "label" }, label), el("div", { class: "value" }, v));
+  const pt = (D.water?.stations || []).find((s) => s.series?.length);
+  const check = pt && modelVsObs(cell, pt.series);
+  const runAge = (now - toDate(D.liveocean.run)) / 3600e3;
+  $("model-now").replaceChildren(...[
+    el("div", { class: "row" },
+      stat("Surface now", cur ? `${num(cur.temp_f, 1)}°F` : "—"),
+      stat("Salinity now", cur ? num(cur.salt, 1) : "—"),
+      stat("Next 3 days", `${range("temp_f", 0)}°F`),
+      stat("Salinity range", range("salt", 1))),
+    el("div", { class: "small muted" },
+      `UW LiveOcean model, run ${fmtDay(D.liveocean.run)} ${fmtTime(D.liveocean.run)}, forecast to ${fmtDay(D.liveocean.forecast_end)}. ` +
+      `Surface water at the ${cell.name} (~500 m grid cell, ${num(cell.depth_m, 0)} m deep). A model estimate, not a measurement.`),
+    runAge > 48 ? el("div", { class: "small", style: "color:var(--warn)" }, `The model run is ${num(runAge / 24, 0)} days old; the forecast may be out of date.`) : null,
+    check ? el("div", { class: "small muted" },
+      `Past 7 days vs. ${pt.name}${pt.distance_km ? ` (${pt.distance_km} km away)` : ""}: ` +
+      `model ${signed(check.bias, 1)}°F on average, typical difference ${num(check.rmse, 1)}°F.`) : null,
+  ].filter(Boolean));
+  const obs = [];
+  if (pt) obs.push({ name: pt.name.replace(" (NOAA)", ""), series: pt.series });
+  liveoceanChart($("model-chart"), D.liveocean, "thorndyke", { height: 180, sun: D.sun, obs });
 }
 
 // ---------- shellfish ----------

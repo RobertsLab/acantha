@@ -1,7 +1,7 @@
 // Interactive map: basemaps, nautical chart overlay, stations, shellfish areas.
-import { loadAll, fmtTime, fmtDayTime, ago, num, compass, el, latestValue, tideAt, cssVar, sensorChart } from "./common.js";
+import { loadAll, fmtTime, fmtDay, fmtDayTime, ago, num, compass, el, latestValue, tideAt, cssVar, sensorChart, liveoceanChart, nearestHour, toDate } from "./common.js";
 
-const D = await loadAll(["meta", "tides", "observations", "water", "shellfish", "sensors"]);
+const D = await loadAll(["meta", "tides", "observations", "water", "shellfish", "sensors", "liveocean"]);
 const site = D.meta?.site || { name: "Thorndyke Bay", lat: 47.806, lon: -122.735 };
 
 const NOAA_ENC =
@@ -93,6 +93,16 @@ const KIND_COLORS = () => ({
   site: cssVar("--accent-2"), tide: cssVar("--series-1"), weather: cssVar("--series-3"), water: "#2a9d8f",
 });
 const SENSOR_COLORS = { live: "#7b4fa0", stale: "#d9a21a", offline: "#888888" };
+const MODEL_COLOR = "#2a9d8f"; // hollow marker: modeled water, not measured
+
+// LiveOcean model cells (hollow markers, so they read as model points rather than stations).
+function modelPoints() {
+  return { type: "FeatureCollection", features: (D.liveocean?.cells || []).map((c) => {
+    const cur = nearestHour(c.series, new Date());
+    return { type: "Feature", geometry: { type: "Point", coordinates: [c.lon, c.lat] },
+      properties: { id: c.id, label: `${c.name} (model)${cur ? ` · ${num(cur.temp_f, 1)}°F` : ""}` } };
+  }) };
+}
 const CLASS_COLORS = {
   approved: "#2f7d4a", conditional: "#d9a21a", restricted: "#d9731a", prohibited: "#b83232", unclassified: "#888888",
 };
@@ -129,6 +139,19 @@ map.on("load", () => {
     "text-font": ["Open Sans Semibold"] },
     paint: { "text-color": "#16231f", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
 
+  if (D.liveocean?.cells?.length) {
+    map.addSource("model", { type: "geojson", data: modelPoints() });
+    map.addLayer({ id: "model", type: "circle", source: "model", paint: {
+      "circle-radius": 6, "circle-color": "#ffffff", "circle-stroke-color": MODEL_COLOR, "circle-stroke-width": 2.5 } }, "points");
+    map.addLayer({ id: "model-labels", type: "symbol", source: "model", minzoom: 12, layout: {
+      "text-field": ["get", "label"], "text-size": 11.5, "text-offset": [0, 1.1], "text-anchor": "top",
+      "text-font": ["Open Sans Semibold"] },
+      paint: { "text-color": "#16231f", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
+    map.on("click", "model", (e) => modelPopup(e.features[0], e.lngLat));
+    map.on("mouseenter", "model", () => (map.getCanvas().style.cursor = "pointer"));
+    map.on("mouseleave", "model", () => (map.getCanvas().style.cursor = ""));
+  }
+
   if (D.sensors?.stations?.length) {
     map.addSource("sensors", { type: "geojson", data: sensorPoints() });
     map.addLayer({ id: "sensors", type: "circle", source: "sensors", paint: {
@@ -150,7 +173,7 @@ map.on("load", () => {
   for (const id of ["areas-fill", "biotoxin-fill"]) {
     if (map.getLayer(id)) map.on("click", id, (e) => {
       // A marker on top of the polygon gets its own popup instead.
-      const markers = ["points", "sensors"].filter((l) => map.getLayer(l));
+      const markers = ["points", "sensors", "model"].filter((l) => map.getLayer(l));
       if (map.queryRenderedFeatures(e.point, { layers: markers }).length) return;
       areaPopup(e.features[0], e.lngLat);
     });
@@ -275,6 +298,24 @@ function sensorPopup(f, lngLat) {
   sensorChart(chart, [s], { hours: 72, width: 260, height: 150, legend: false });
 }
 
+function modelPopup(f, lngLat) {
+  const lo = D.liveocean;
+  const c = lo.cells.find((x) => x.id === f.properties.id);
+  const now = Date.now();
+  const cur = nearestHour(c.series, now);
+  const ahead = c.series.map((r) => (toDate(r.t) > now && toDate(r.t) - now <= 72 * 3600e3 ? r.temp_f : null)).filter((v) => v != null);
+  const chart = el("div", { class: "popup-chart" });
+  const body = el("div", {},
+    el("h3", {}, c.name, el("span", { class: "badge muted", style: "margin-left:6px" }, "model")),
+    cur ? el("div", {}, el("b", {}, `${num(cur.temp_f, 1)}°F`), ` surface · salinity ${num(cur.salt, 1)}`) : el("div", { class: "muted" }, "No current model value"),
+    ahead.length ? el("div", {}, `Next 3 days: ${num(Math.min(...ahead), 0)}–${num(Math.max(...ahead), 0)}°F`) : "",
+    el("div", { class: "muted small" }, `UW LiveOcean run ${fmtDay(lo.run)} ${fmtTime(lo.run)} · ~500 m cell, ${num(c.depth_m, 0)} m deep · ${num(c.distance_km, 1)} km from site`),
+    el("div", { class: "muted small" }, "Model estimate of surface water, not a measurement."),
+    chart);
+  new maplibregl.Popup({ offset: 10, maxWidth: "300px" }).setLngLat(lngLat).setDOMContent(body).addTo(map);
+  liveoceanChart(chart, lo, c.id, { width: 260, height: 150, legend: false });
+}
+
 function areaPopup(f, lngLat) {
   const p = f.properties;
   const body = el("div", {}, el("h3", {}, p.name || "Area"),
@@ -310,6 +351,9 @@ class LayerControl {
       check(["biotoxin-fill", "biotoxin-line"], "Recreational biotoxin zones", false),
       check(["points", "labels"], "Stations", true),
       check(["sensors", "sensor-labels"], D.sensors?.mock ? "Farm sensors (mock)" : "Farm sensors", true, SENSOR_COLORS.live),
+      m.getLayer("model") ? el("label", {}, el("input", { type: "checkbox", checked: "",
+        onchange: (e) => ["model", "model-labels"].forEach((i) => m.setLayoutProperty(i, "visibility", e.target.checked ? "visible" : "none")) }),
+        " ", el("span", { class: "legend-dot", style: `background:#fff;box-shadow:inset 0 0 0 2px ${MODEL_COLOR}` }), "LiveOcean model cells") : null,
       el("hr"),
       el("div", { class: "small" },
         el("div", {}, el("span", { class: "legend-dot", style: `background:${kc.site}` }), "Thorndyke Bay"),

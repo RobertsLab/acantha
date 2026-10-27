@@ -41,7 +41,7 @@ ingest/
     doh.py           WA DOH biotoxin status + commercial growing areas
     water.py         NANOOS/IOOS ERDDAP water temp, salinity, oxygen
     liveocean.py     UW LiveOcean model surface temp/salinity nowcast + forecast via OPeNDAP
-                     (JSON only for now; not shown on the site yet, see docs/liveocean-plan.md)
+                     (shown as the "Water forecast" card and map markers; see docs/liveocean-plan.md)
     sensors.py       farm LoRaWAN temperature nodes via The Things Network
                      (SENSORS_MOCK=1 python3 ingest/fetch.py --only sensors for fake data;
                      adding gateways and sensors: docs/sensors.md)

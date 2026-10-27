@@ -121,7 +121,7 @@ def _fetch_from(base: str, previous: dict | None) -> dict:
     times = [None if h is None else t0 + timedelta(hours=h) for h in hours[i0:]]
     cells = [_cell(base, c, i0, n - 1, times, run) for c in LIVEOCEAN_CELLS]
     return {"source": "UW LiveOcean via NANOOS/IOOS THREDDS", "server": base,
-            "run": iso(run), "level": "surface", "hidden": True,
+            "run": iso(run), "level": "surface",
             "forecast_end": iso(max(t for t in times if t)), "cells": cells, "reused": False}
 
 

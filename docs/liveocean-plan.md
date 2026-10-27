@@ -4,6 +4,15 @@ Goal: add the UW LiveOcean model (nowcast and ~2–3 day forecast) for the water
 filling the gap left by the offline ORCA buoys (see README "Known gaps"), and feeding the
 "DO now and 3-day forecast" and Vibrio rows of the decision table in [PLAN.md](../PLAN.md).
 
+## Status (2026-10-26)
+
+Steps 3–5 are done: `ingest/sources/liveocean.py` runs with the other sources and reuses its output
+when the daily run hasn't changed, and the site shows the **Water forecast** dashboard card (surface
+temperature and salinity, 3-day range, forecast shading, Port Townsend overlay and a 7-day model-vs-observation
+bias), hollow **model cell markers** on the map with a popup chart, and a **Data page** section with the
+caveats and credit. Step 6 (Vibrio and salinity hooks) and the step 2 email to the LiveOcean team are still open.
+The OSU server (step 1) has not been rechecked.
+
 ## 1. What the data access actually looks like (probed 2026-10-20)
 
 **Primary server is unreachable from here.** `nanoos.ceoas.oregonstate.edu` (CNAME
