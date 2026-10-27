@@ -1,0 +1,10 @@
+[
+  {
+    "id": "little-dragon-01",
+    "name": "Test sensor",
+    "lat": 47.8072,
+    "lon": -122.7372,
+    "elevation_ft": 8.0,
+    "placement": "Test unit on the beach (elevation estimated)"
+  }
+]
