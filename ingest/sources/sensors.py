@@ -18,6 +18,7 @@ import json
 import math
 import os
 import random
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
@@ -47,9 +48,17 @@ def _ttn_uplinks(app_id: str, api_key: str, after: datetime) -> list[dict]:
     url = (f"https://{TTN_CLUSTER}.cloud.thethings.network/api/v3/as/applications/"
            f"{urllib.parse.quote(app_id)}/packages/storage/uplink_message?{q}")
     req = urllib.request.Request(url, headers={
-        "Authorization": f"Bearer {api_key}", "Accept": "text/event-stream", "User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        body = resp.read().decode()
+        "Authorization": f"Bearer {api_key.strip()}", "Accept": "text/event-stream", "User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            body = resp.read().decode()
+    except urllib.error.HTTPError as e:
+        # TTN puts the actual reason (bad token, missing rights, ...) in the JSON body.
+        try:
+            msg = json.loads(e.read().decode())["error"]["message"]
+        except Exception:
+            msg = e.reason
+        raise RuntimeError(f"TTN HTTP {e.code}: {msg}") from None
     # The response is a stream of {"result": {...}} objects separated by newlines.
     out = []
     for line in body.splitlines():
