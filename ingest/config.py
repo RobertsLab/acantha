@@ -40,8 +40,8 @@ SENSOR_OFFLINE_MIN = 360      # ... and this long -> "offline"
 # common names are tried (temp_c, TempC1, Temp_C1, temperature, ... / BatV, battery_v).
 # Positions are placeholders until the site visit.
 SENSORS = [
-    # Dragino D20-LB (DevEUI A84041946D62ED52), test unit; TTN's default ID for it.
-    {"id": "eui-a84041946d62ed52", "name": "Test sensor", "lat": 47.8072, "lon": -122.7372,
+    # Dragino D20-LB (DevEUI A84041946D62ED52), test unit, in TTN application my-tracker-320.
+    {"id": "little-dragon-01", "name": "Test sensor", "lat": 47.8072, "lon": -122.7372,
      "elevation_ft": 8.0, "placement": "Test unit on the beach (elevation estimated)"},
 ]
 
