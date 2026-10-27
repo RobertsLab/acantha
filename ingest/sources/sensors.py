@@ -26,7 +26,7 @@ from config import (SENSOR_OFFLINE_MIN, SENSOR_RETENTION_DAYS, SENSOR_STALE_MIN,
                     TTN_CLUSTER, USER_AGENT)
 from sources.common import c_to_f, iso, parse_iso, utcnow
 
-TEMP_KEYS = ("temp_c", "TempC1", "TempC_DS", "TempC_SHT", "temperature", "temp")
+TEMP_KEYS = ("temp_c", "TempC1", "Temp_C1", "TempC_DS", "TempC_SHT", "temperature", "temp")
 BATTERY_KEYS = ("battery_v", "BatV", "Bat_V", "battery")
 
 # QC thresholds (deg C). The climatology range covers both Hood Canal water

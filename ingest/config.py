@@ -37,15 +37,12 @@ SENSOR_OFFLINE_MIN = 360      # ... and this long -> "offline"
 # is the probe height in ft MLLW, used to flag readings taken while the probe
 # is out of the water. `temp_field` / `battery_field` name the keys in the
 # device's decoded payload (depends on the payload formatter); if omitted,
-# common names are tried (temp_c, TempC1, temperature, ... / BatV, battery_v).
+# common names are tried (temp_c, TempC1, Temp_C1, temperature, ... / BatV, battery_v).
 # Positions are placeholders until the site visit.
 SENSORS = [
-    {"id": "thorndyke-upper", "name": "Upper beach", "lat": 47.8072, "lon": -122.7372,
-     "elevation_ft": 5.0, "placement": "In-bag, upper intertidal"},
-    {"id": "thorndyke-mid", "name": "Mid beach", "lat": 47.8064, "lon": -122.7355,
-     "elevation_ft": 1.5, "placement": "In-bag, mid intertidal"},
-    {"id": "thorndyke-float", "name": "Subtidal float", "lat": 47.8053, "lon": -122.7336,
-     "elevation_ft": -4.0, "placement": "Probe 1 m below float"},
+    # Dragino D20-LB (DevEUI A84041946D62ED52), test unit; TTN's default ID for it.
+    {"id": "eui-a84041946d62ed52", "name": "Test sensor", "lat": 47.8072, "lon": -122.7372,
+     "elevation_ft": 8.0, "placement": "Test unit on the beach (elevation estimated)"},
 ]
 
 # Observed rain (Stage IV at the site + nearby CoCoRaHS gauges), for the rain closure watch.
