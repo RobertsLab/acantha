@@ -1,0 +1,11 @@
+{"type":"FeatureCollection","features":[
+{"type":"Feature","properties":{"name":"North row – east","type":"block"},"geometry":{"type":"Polygon","coordinates":[[[-122.735646,47.809592],[-122.735657,47.809079],[-122.734516,47.809079],[-122.734516,47.809614],[-122.735065,47.809592],[-122.735646,47.809592]]]}},
+{"type":"Feature","properties":{"name":"North row – middle","type":"block"},"geometry":{"type":"Polygon","coordinates":[[[-122.737078,47.809195],[-122.737078,47.808739],[-122.735743,47.808739],[-122.735743,47.809195],[-122.737078,47.809195]]]}},
+{"type":"Feature","properties":{"name":"North row – west","type":"block"},"geometry":{"type":"Polygon","coordinates":[[[-122.73852,47.80918],[-122.73852,47.808746],[-122.737207,47.808746],[-122.737207,47.80918],[-122.73852,47.80918]]]}},
+{"type":"Feature","properties":{"name":"Second row – west","type":"block"},"geometry":{"type":"Polygon","coordinates":[[[-122.738508,47.808695],[-122.738508,47.808275],[-122.737206,47.808275],[-122.737206,47.808695],[-122.738508,47.808695]]]}},
+{"type":"Feature","properties":{"name":"Step 3","type":"block"},"geometry":{"type":"Polygon","coordinates":[[[-122.739111,47.808268],[-122.739111,47.807785],[-122.738839,47.807785],[-122.738839,47.808268],[-122.739111,47.808268]]]}},
+{"type":"Feature","properties":{"name":"Step 2","type":"block"},"geometry":{"type":"Polygon","coordinates":[[[-122.739421,47.807986],[-122.739421,47.807551],[-122.739154,47.807551],[-122.739154,47.807986],[-122.739421,47.807986]]]}},
+{"type":"Feature","properties":{"name":"Step 1","type":"block"},"geometry":{"type":"Polygon","coordinates":[[[-122.739774,47.807755],[-122.739774,47.807314],[-122.739488,47.807314],[-122.739488,47.807755],[-122.739774,47.807755]]]}},
+{"type":"Feature","properties":{"name":"Step 4","type":"block"},"geometry":{"type":"Polygon","coordinates":[[[-122.738798,47.80847],[-122.738798,47.808016],[-122.738531,47.808016],[-122.738531,47.80847],[-122.738798,47.80847]]]}},
+{"type":"Feature","properties":{"name":"Research bags","type":"line"},"geometry":{"type":"LineString","coordinates":[[-122.738771,47.808466],[-122.738774,47.808026]]}}
+]}

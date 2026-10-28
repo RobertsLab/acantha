@@ -3,6 +3,7 @@ import { load, loadAll, fmtTime, fmtDay, fmtDayTime, ago, num, compass, el, late
 
 const D = await loadAll(["meta", "tides", "observations", "water", "shellfish", "sensors", "liveocean"]);
 D.imagery = await load("imagery", "data/imagery/imagery.json");
+D.farm = await load("farm", "farm-layout.geojson"); // hand-drawn, not pipeline output
 const site = D.meta?.site || { name: "Thorndyke Bay", lat: 47.806, lon: -122.735 };
 
 const NOAA_ENC =
@@ -95,6 +96,7 @@ const KIND_COLORS = () => ({
 });
 const SENSOR_COLORS = { live: "#7b4fa0", stale: "#d9a21a", offline: "#888888" };
 const MODEL_COLOR = "#2a9d8f"; // hollow marker: modeled water, not measured
+const FARM_COLOR = "#a0522d", RESEARCH_COLOR = "#c0392b";
 
 // LiveOcean model cells (hollow markers, so they read as model points rather than stations).
 function modelPoints() {
@@ -128,6 +130,29 @@ map.on("load", () => {
       paint: { "fill-color": ["case", ["get", "closed"], "#b83232", "#2f7d4a"], "fill-opacity": 0.25 } });
     map.addLayer({ id: "biotoxin-line", type: "line", source: "biotoxin", layout: { visibility: "none" },
       paint: { "line-color": ["case", ["get", "closed"], "#b83232", "#2f7d4a"], "line-width": 2, "line-dasharray": [2, 1] } });
+  }
+
+  // Farm layout: bag blocks (polygons) and lines, drawn in geojson.io from the farm schematic.
+  if (D.farm?.features?.length) {
+    map.addSource("farm", { type: "geojson", data: D.farm });
+    map.addLayer({ id: "farm-fill", type: "fill", source: "farm", filter: ["==", ["geometry-type"], "Polygon"],
+      paint: { "fill-color": FARM_COLOR, "fill-opacity": 0.3 } });
+    map.addLayer({ id: "farm-outline", type: "line", source: "farm", filter: ["==", ["geometry-type"], "Polygon"],
+      paint: { "line-color": FARM_COLOR, "line-width": 1.5 } });
+    map.addLayer({ id: "farm-line", type: "line", source: "farm", filter: ["==", ["geometry-type"], "LineString"],
+      layout: { "line-cap": "round" }, paint: { "line-color": RESEARCH_COLOR, "line-width": 4 } });
+    map.addLayer({ id: "farm-labels", type: "symbol", source: "farm", minzoom: 17,
+      filter: ["==", ["geometry-type"], "Polygon"], layout: {
+      "text-field": ["get", "name"], "text-size": 11, "text-font": ["Open Sans Semibold"] },
+      paint: { "text-color": "#16231f", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
+    for (const id of ["farm-fill", "farm-line"]) {
+      map.on("click", id, (e) => {
+        if (map.queryRenderedFeatures(e.point, { layers: ["points", "sensors", "model"].filter((l) => map.getLayer(l)) }).length) return;
+        farmPopup(e.features[0], e.lngLat);
+      });
+      map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", id, () => (map.getCanvas().style.cursor = ""));
+    }
   }
 
   map.addSource("points", { type: "geojson", data: points() });
@@ -174,7 +199,7 @@ map.on("load", () => {
   for (const id of ["areas-fill", "biotoxin-fill"]) {
     if (map.getLayer(id)) map.on("click", id, (e) => {
       // A marker on top of the polygon gets its own popup instead.
-      const markers = ["points", "sensors", "model"].filter((l) => map.getLayer(l));
+      const markers = ["points", "sensors", "model", "farm-fill", "farm-line"].filter((l) => map.getLayer(l));
       if (map.queryRenderedFeatures(e.point, { layers: markers }).length) return;
       areaPopup(e.features[0], e.lngLat);
     });
@@ -368,6 +393,15 @@ function modelPopup(f, lngLat) {
   liveoceanChart(chart, lo, c.id, { width: 260, height: 150, legend: false });
 }
 
+function farmPopup(f, lngLat) {
+  const p = f.properties;
+  const extra = Object.entries(p).filter(([k]) => !["name", "type"].includes(k));
+  const body = el("div", {}, el("h3", {}, p.name || "Farm"),
+    el("div", { class: "muted small" }, p.type === "line" ? "Line" : "Bag block"),
+    ...extra.map(([k, v]) => el("div", { class: "small" }, `${k}: ${v}`)));
+  new maplibregl.Popup().setLngLat(lngLat).setDOMContent(body).addTo(map);
+}
+
 function areaPopup(f, lngLat) {
   const p = f.properties;
   const body = el("div", {}, el("h3", {}, p.name || "Area"),
@@ -401,6 +435,7 @@ class LayerControl {
       radar.player,
       sat.scenes.length ? el("label", {}, sat.check, " Satellite view (Sentinel-2)") : null,
       sat.scenes.length ? sat.player : null,
+      check(["farm-fill", "farm-outline", "farm-line", "farm-labels"], "Farm layout", true, FARM_COLOR),
       check(["areas-fill", "areas-line"], "Commercial growing areas", true),
       check(["biotoxin-fill", "biotoxin-line"], "Recreational biotoxin zones", false),
       check(["points", "labels"], "Stations", true),
