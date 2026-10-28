@@ -46,10 +46,20 @@ const RADAR_MODES = {
   },
 };
 
+// Open on the farm layout when there is one, otherwise on the bay.
+function farmBounds() {
+  const pts = (D.farm?.features || []).flatMap(({ geometry: g }) =>
+    g.type === "Polygon" ? g.coordinates.flat() : g.type === "LineString" ? g.coordinates : [g.coordinates]);
+  if (!pts.length) return null;
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  return [[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]];
+}
+const farm = farmBounds();
+const farmFit = { padding: 40, maxZoom: 17.5 };
+
 const map = new maplibregl.Map({
   container: "map",
-  center: [site.lon, site.lat],
-  zoom: 10.5,
+  ...(farm ? { bounds: farm, fitBoundsOptions: farmFit } : { center: [site.lon, site.lat], zoom: 10.5 }),
   attributionControl: { compact: true },
   style: {
     version: 8,
@@ -232,7 +242,11 @@ map.on("load", () => {
   map.on("mouseenter", "points", () => (map.getCanvas().style.cursor = "pointer"));
   map.on("mouseleave", "points", () => (map.getCanvas().style.cursor = ""));
 
-  map.addControl(new LayerControl(), "top-right");
+  const layers = new LayerControl();
+  map.addControl(layers, "top-right");
+  // Fit again now the pane has its final size, keeping the farm clear of the Layers panel when it's open.
+  if (farm) map.fitBounds(farm, { ...farmFit, duration: 0,
+    padding: { top: 40, bottom: 40, left: 40, right: layers._c.open ? layers._c.offsetWidth + 30 : 40 } });
   sat.init();
 });
 
