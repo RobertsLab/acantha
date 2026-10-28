@@ -2,3 +2,4 @@
 # One line per photo:  <file name>: <caption>
 # Add "@ lat, lon" to place a photo that has no GPS position, e.g.
 #   IMG_1234.HEIC: Bags flipped on the north row @ 47.8091, -122.7360
+IMG_8117.HEIC: @ 47.809195, -122.737078
