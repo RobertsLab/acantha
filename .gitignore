@@ -3,3 +3,12 @@ __pycache__/
 *.pyc
 .DS_Store
 web/data/imagery/
+
+# Original farm photos (only the web copies in web/photos/ are committed)
+photos/**/*.[jJ][pP][gG]
+photos/**/*.[jJ][pP][eE][gG]
+photos/**/*.[hH][eE][iI][cC]
+photos/**/*.[hH][eE][iI][fF]
+photos/**/*.[pP][nN][gG]
+photos/**/*.[mM][oO][vV]
+photos/**/*.[xX][mM][pP]

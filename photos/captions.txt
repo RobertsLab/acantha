@@ -1,0 +1,4 @@
+# Captions and hand-placed positions for photos in this folder.
+# One line per photo:  <file name>: <caption>
+# Add "@ lat, lon" to place a photo that has no GPS position, e.g.
+#   IMG_1234.HEIC: Bags flipped on the north row @ 47.8091, -122.7360

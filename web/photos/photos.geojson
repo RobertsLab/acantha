@@ -1,0 +1,21 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -122.736839,
+     47.809192
+    ]
+   },
+   "properties": {
+    "src": "photos/20250811-6e0050cc16.jpg",
+    "thumb": "photos/thumbs/20250811-6e0050cc16.jpg",
+    "taken": "2025-08-11T12:30:42",
+    "caption": null
+   }
+  }
+ ]
+}

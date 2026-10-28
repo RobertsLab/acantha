@@ -162,6 +162,7 @@ button.secondary { background: transparent; color: var(--accent); }
 
 /* ---------- farm sensors ---------- */
 .popup-chart { margin-top: 6px; }
+.photo-popup img { display: block; width: 100%; max-width: 250px; border-radius: 4px; margin-bottom: 4px; }
 .sensor-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: baseline;
   padding: 6px 0; border-bottom: 1px solid var(--line); }
 .sensor-row:last-of-type { border-bottom: 0; }

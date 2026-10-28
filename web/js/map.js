@@ -5,6 +5,7 @@ const D = await loadAll(["meta", "tides", "observations", "water", "shellfish", 
 D.imagery = await load("imagery", "data/imagery/imagery.json");
 D.farm = await load("farm", "farm-layout.geojson"); // hand-drawn, not pipeline output
 D.contours = await load("contours", "baseline/tide_contours.geojson"); // from baseline/tide_contours.py
+D.photos = await load("photos", "photos/photos.geojson"); // from photos/build.py
 const site = D.meta?.site || { name: "Thorndyke Bay", lat: 47.806, lon: -122.735 };
 
 const NOAA_ENC =
@@ -99,6 +100,7 @@ const SENSOR_COLORS = { live: "#7b4fa0", stale: "#d9a21a", offline: "#888888" };
 const MODEL_COLOR = "#2a9d8f"; // hollow marker: modeled water, not measured
 const FARM_COLOR = "#a0522d", RESEARCH_COLOR = "#c0392b";
 // Tide-height lines: blue below MLLW, sand to green going up the beach.
+const PHOTO_COLOR = "#2b2d42";
 const CONTOUR_COLOR = ["interpolate", ["linear"], ["get", "ft"], -6, "#1f5f8b", 0, "#e8eef0", 6, "#d9b26a", 12, "#5f8f4e"];
 
 // LiveOcean model cells (hollow markers, so they read as model points rather than stations).
@@ -161,12 +163,21 @@ map.on("load", () => {
       paint: { "text-color": "#16231f", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
     for (const id of ["farm-fill", "farm-line"]) {
       map.on("click", id, (e) => {
-        if (map.queryRenderedFeatures(e.point, { layers: ["points", "sensors", "model"].filter((l) => map.getLayer(l)) }).length) return;
+        if (map.queryRenderedFeatures(e.point, { layers: ["points", "sensors", "model", "photos"].filter((l) => map.getLayer(l)) }).length) return;
         farmPopup(e.features[0], e.lngLat);
       });
       map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", id, () => (map.getCanvas().style.cursor = ""));
     }
+  }
+
+  if (D.photos?.features?.length) {
+    map.addSource("photos", { type: "geojson", data: D.photos });
+    map.addLayer({ id: "photos", type: "circle", source: "photos", paint: {
+      "circle-radius": 5.5, "circle-color": PHOTO_COLOR, "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
+    map.on("click", "photos", (e) => photoPopup(e.features[0], e.lngLat));
+    map.on("mouseenter", "photos", () => (map.getCanvas().style.cursor = "pointer"));
+    map.on("mouseleave", "photos", () => (map.getCanvas().style.cursor = ""));
   }
 
   map.addSource("points", { type: "geojson", data: points() });
@@ -213,7 +224,7 @@ map.on("load", () => {
   for (const id of ["areas-fill", "biotoxin-fill"]) {
     if (map.getLayer(id)) map.on("click", id, (e) => {
       // A marker on top of the polygon gets its own popup instead.
-      const markers = ["points", "sensors", "model", "farm-fill", "farm-line"].filter((l) => map.getLayer(l));
+      const markers = ["points", "sensors", "model", "photos", "farm-fill", "farm-line"].filter((l) => map.getLayer(l));
       if (map.queryRenderedFeatures(e.point, { layers: markers }).length) return;
       areaPopup(e.features[0], e.lngLat);
     });
@@ -407,6 +418,19 @@ function modelPopup(f, lngLat) {
   liveoceanChart(chart, lo, c.id, { width: 260, height: 150, legend: false });
 }
 
+function photoPopup(f, lngLat) {
+  const p = f.properties;
+  // `taken` is the camera's local wall-clock time with no zone, so show it as-is.
+  const when = p.taken && new Date(p.taken).toLocaleString("en-US",
+    { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+  const body = el("div", { class: "photo-popup" },
+    el("a", { href: p.src, target: "_blank", rel: "noopener", title: "Open full size" },
+      el("img", { src: p.thumb, alt: p.caption || "Farm photo" })),
+    p.caption ? el("div", {}, p.caption) : "",
+    when ? el("div", { class: "muted small" }, when) : "");
+  new maplibregl.Popup({ offset: 8, maxWidth: "280px" }).setLngLat(lngLat).setDOMContent(body).addTo(map);
+}
+
 function farmPopup(f, lngLat) {
   const p = f.properties;
   const extra = Object.entries(p).filter(([k]) => !["name", "type"].includes(k));
@@ -451,6 +475,7 @@ class LayerControl {
       sat.scenes.length ? sat.player : null,
       check(["farm-fill", "farm-outline", "farm-line", "farm-labels"], "Farm layout", true, FARM_COLOR),
       check(["contours", "contour-labels"], "Tide height lines (ft MLLW)", true, "#d9b26a"),
+      check(["photos"], "Photos", true, PHOTO_COLOR),
       check(["areas-fill", "areas-line"], "Commercial growing areas", true),
       check(["biotoxin-fill", "biotoxin-line"], "Recreational biotoxin zones", false),
       check(["points", "labels"], "Stations", true),
