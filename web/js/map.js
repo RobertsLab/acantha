@@ -4,6 +4,7 @@ import { load, loadAll, fmtTime, fmtDay, fmtDayTime, ago, num, compass, el, late
 const D = await loadAll(["meta", "tides", "observations", "water", "shellfish", "sensors", "liveocean"]);
 D.imagery = await load("imagery", "data/imagery/imagery.json");
 D.farm = await load("farm", "farm-layout.geojson"); // hand-drawn, not pipeline output
+D.contours = await load("contours", "baseline/tide_contours.geojson"); // from baseline/tide_contours.py
 const site = D.meta?.site || { name: "Thorndyke Bay", lat: 47.806, lon: -122.735 };
 
 const NOAA_ENC =
@@ -97,6 +98,8 @@ const KIND_COLORS = () => ({
 const SENSOR_COLORS = { live: "#7b4fa0", stale: "#d9a21a", offline: "#888888" };
 const MODEL_COLOR = "#2a9d8f"; // hollow marker: modeled water, not measured
 const FARM_COLOR = "#a0522d", RESEARCH_COLOR = "#c0392b";
+// Tide-height lines: blue below MLLW, sand to green going up the beach.
+const CONTOUR_COLOR = ["interpolate", ["linear"], ["get", "ft"], -6, "#1f5f8b", 0, "#e8eef0", 6, "#d9b26a", 12, "#5f8f4e"];
 
 // LiveOcean model cells (hollow markers, so they read as model points rather than stations).
 function modelPoints() {
@@ -130,6 +133,17 @@ map.on("load", () => {
       paint: { "fill-color": ["case", ["get", "closed"], "#b83232", "#2f7d4a"], "fill-opacity": 0.25 } });
     map.addLayer({ id: "biotoxin-line", type: "line", source: "biotoxin", layout: { visibility: "none" },
       paint: { "line-color": ["case", ["get", "closed"], "#b83232", "#2f7d4a"], "line-width": 2, "line-dasharray": [2, 1] } });
+  }
+
+  if (D.contours?.features?.length) {
+    map.addSource("contours", { type: "geojson", data: D.contours });
+    map.addLayer({ id: "contours", type: "line", source: "contours", minzoom: 13, paint: {
+      "line-color": CONTOUR_COLOR, "line-width": ["case", ["==", ["get", "ft"], 0], 2.5, 1.3],
+      "line-opacity": 0.9 } });
+    map.addLayer({ id: "contour-labels", type: "symbol", source: "contours", minzoom: 14, layout: {
+      "symbol-placement": "line", "symbol-spacing": 250, "text-size": 11, "text-font": ["Open Sans Semibold"],
+      "text-field": ["concat", ["to-string", ["get", "ft"]], " ft"] },
+      paint: { "text-color": "#16231f", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
   }
 
   // Farm layout: bag blocks (polygons) and lines, drawn in geojson.io from the farm schematic.
@@ -436,6 +450,7 @@ class LayerControl {
       sat.scenes.length ? el("label", {}, sat.check, " Satellite view (Sentinel-2)") : null,
       sat.scenes.length ? sat.player : null,
       check(["farm-fill", "farm-outline", "farm-line", "farm-labels"], "Farm layout", true, FARM_COLOR),
+      check(["contours", "contour-labels"], "Tide height lines (ft MLLW)", true, "#d9b26a"),
       check(["areas-fill", "areas-line"], "Commercial growing areas", true),
       check(["biotoxin-fill", "biotoxin-line"], "Recreational biotoxin zones", false),
       check(["points", "labels"], "Stations", true),

@@ -2,3 +2,8 @@
 aiohttp>=3.9
 fsspec>=2024.2
 h5py>=3.10
+# Tide-height contours (baseline/tide_contours.py)
+numpy>=1.26
+rasterio>=1.3
+scipy>=1.11
+scikit-image>=0.21
