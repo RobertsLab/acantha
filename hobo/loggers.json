@@ -1,0 +1,49 @@
+{
+  "site": {
+    "name": "Step 4 research bags",
+    "lat": 47.80825,
+    "lon": -122.73877,
+    "elevation_ft": 2.0,
+    "elevation_datum": "MLLW",
+    "elevation_note": "Estimated: fitted from the winter air/water split against Lofall tide predictions; CUDEM puts the ground at ~0.8 ft."
+  },
+  "repo": "RobertsLab/10K-seed-Cgigas",
+  "ref": "628dc4b4657a458781593e02b38e145dc4f6292c",
+  "source": "https://github.com/RobertsLab/10K-seed-Cgigas/blob/628dc4b4657a458781593e02b38e145dc4f6292c/output/baywater_temperature_20260922.csv",
+  "deployed": "2024-10-31T09:00:00Z",
+  "visits": [
+    "2025-08-11T19:30:00Z",
+    "2025-08-11T20:05:00Z",
+    "2025-08-20T16:23:00Z",
+    "2025-11-05T04:20:00Z",
+    "2026-06-06T21:36:00Z",
+    "2026-06-06T23:31:00Z",
+    "2026-08-27T16:40:00Z",
+    "2026-09-22T15:43:00Z"
+  ],
+  "out_of_water": [
+    [
+      "2025-08-20T16:00:00Z",
+      "2025-08-22T04:00:00Z"
+    ]
+  ],
+  "flood_settle_min": 180,
+  "loggers": [
+    {
+      "serial": "22023410",
+      "model": "Onset MX2204",
+      "start": "2024-10-31T09:00:00Z",
+      "end": "2026-09-22T15:45:00Z",
+      "readings": 66356,
+      "flagged": 269
+    },
+    {
+      "serial": "22023411",
+      "model": "Onset MX2204",
+      "start": "2024-10-31T09:00:00Z",
+      "end": "2026-09-22T15:30:00Z",
+      "readings": 66355,
+      "flagged": 272
+    }
+  ]
+}
