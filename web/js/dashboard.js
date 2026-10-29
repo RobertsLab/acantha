@@ -2,13 +2,14 @@
 import {
   load, loadAll, TZ, fmtTime, fmtDayTime, fmtDay, ago, num, compass, el, toDate, tideAt, isDaylight,
   nearestHour, latestValue, getSettings, saveSettings, DEFAULTS, uplotTz, nightShade, nowLine,
-  cssVar, sourceBadge, sensorChart, liveoceanChart, modelVsObs, satScenes,
+  cssVar, sourceBadge, sensorChart, liveoceanChart, modelVsObs, satScenes, cToF, hoboDays, hoboChart, localDateKey,
 } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 
 const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors", "liveocean"]);
 const NORMAL = await load("liveocean_climatology", "baseline/liveocean_climatology.json");
+const HOBO = await load("thorndyke_hobo", "baseline/thorndyke_hobo.json");
 D.imagery = await load("imagery", "data/imagery/imagery.json");
 let S = getSettings();
 
@@ -20,6 +21,7 @@ function render() {
   renderRain();
   renderSensors();
   renderWater();
+  renderHobo();
   renderModel();
   renderSatellite();
   renderShellfish();
@@ -325,8 +327,8 @@ function waterLatest() {
   return st ? { ...st.latest, station: st } : null;
 }
 
-// Compare the current reading with LiveOcean's monthly surface climatology at the bay mouth.
-const cToF = (c) => (c == null ? null : c * 9 / 5 + 32);
+// Compare the current reading with LiveOcean's monthly surface climatology at the bay mouth,
+// and with the measured monthly normal from the archival loggers in the Step 4 bag.
 const signed = (v, d) => `${v >= 0 ? "+" : "−"}${num(Math.abs(v), d)}`;
 
 function renderNormal(latest) {
@@ -349,8 +351,18 @@ function renderNormal(latest) {
     ? `${latest.station?.name || "Reading"}: ${parts.join(", ")}`
     : `${monthName} normal: ${num(normF, 1)}°F, salinity ${num(m.surface.salt, 1)}`;
   const far = latest?.station?.distance_km > 15 ? ` ${latest.station.name} is ${latest.station.distance_km} km away, so compare loosely.` : "";
+  const farm = HOBO?.monthly?.find((x) => x.month === month);
+  let farmLine = null;
+  if (farm) {
+    const fF = cToF(farm.mean_c);
+    const vs = latest?.water_temp_f != null ? ` Reading is ${signed(latest.water_temp_f - fF, 1)}°F vs. the farm.` : "";
+    farmLine = el("div", { class: "small" },
+      `Farm logger ${monthName} normal: ${num(fF, 1)}°F (${num(cToF(farm.p10_c), 0)}–${num(cToF(farm.p90_c), 0)}°F), ` +
+      `Step 4 bag ${farm.years[0]}–${String(farm.years.at(-1)).slice(2)}.${vs}`);
+  }
   return el("div", { style: "margin-bottom:8px" },
     el("div", { class: "small" }, head),
+    farmLine,
     el("div", { class: "small muted" },
       `Normal = LiveOcean model ${monthName} surface average (${NORMAL.years}) at the Thorndyke Bay mouth; ` +
       `bottom oxygen normal ${num(m.bottom.do_mgl, 1)} mg/L at ${num(m.bottom.depth_m, 0)} m.${far}`));
@@ -373,6 +385,44 @@ function renderWater() {
     el("div", { class: "small muted" }, `${s.name}${s.distance_km != null ? ` (${s.distance_km} km)` : ""}${s.latest.depth_m != null ? `, ${num(s.latest.depth_m, 0)} m depth` : ""}, ${ago(s.latest.t)}`))),
     ...(normal ? [normal] : []),
     ...(D.water.notes || []).map((n) => el("div", { class: "small muted" }, n)));
+}
+
+// ---------- archival bag temperature (HOBO loggers, Step 4) ----------
+const fmtDate = (d) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+function renderHobo() {
+  const days = hoboDays(HOBO);
+  $("hobo-card").hidden = !days.length;
+  if (!days.length) return;
+
+  // This week in earlier years: mean water temperature within ±3 days of today's date.
+  const today = localDateKey(new Date()).slice(5);
+  const doy = (md) => Date.UTC(2001, Number(md.slice(0, 2)) - 1, Number(md.slice(3, 5))) / 864e5;
+  const near = (md) => Math.min(Math.abs(doy(md) - doy(today)), 365 - Math.abs(doy(md) - doy(today))) <= 3;
+  const byYear = {};
+  for (const d of days) {
+    if (d.water_mean != null && near(d.date.slice(5))) (byYear[d.date.slice(0, 4)] ||= []).push(d.water_mean);
+  }
+  const years = Object.entries(byYear).filter(([, v]) => v.length >= 3)
+    .map(([y, v]) => el("div", { class: "stat" }, el("div", { class: "label" }, `This week ${y}`),
+      el("div", { class: "value" }, `${num(cToF(v.reduce((a, b) => a + b) / v.length), 1)}°F`)));
+
+  const hot = days.filter((d) => cToF(d.bag_max) >= S.heatF);
+  const peak = days.reduce((a, b) => (b.bag_max > a.bag_max ? b : a));
+  const cold = days.reduce((a, b) => (b.bag_min < a.bag_min ? b : a));
+  $("hobo-now").replaceChildren(
+    years.length ? el("div", { class: "row" }, ...years) : "",
+    el("div", { class: "small", style: "margin-top:6px" },
+      `Bag reached your ${S.heatF}°F heat threshold on ${hot.length} day${hot.length === 1 ? "" : "s"}` +
+      `${hot.length ? ` (last ${fmtDate(hot.at(-1).date)})` : ""}. Peak ${num(cToF(peak.bag_max), 1)}°F on ${fmtDate(peak.date)}; ` +
+      `coldest ${num(cToF(cold.bag_min), 1)}°F on ${fmtDate(cold.date)}.`));
+  hoboChart($("hobo-chart"), HOBO, { height: 170 });
+  const first = days[0].date, last = days.at(-1).date;
+  $("hobo-note").replaceChildren(el("div", { class: "small muted" },
+    `HOBO loggers inside a research bag on Step 4 (~${num(HOBO.site.elevation_ft, 0)} ft MLLW), ${fmtDate(first)} to ${fmtDate(last)}. ` +
+    "Water = readings while the bag was well covered; bag max/min include low-tide exposure. ",
+    el("a", { href: "https://github.com/RobertsLab/acantha/tree/sensor-data/hobo", target: "_blank", rel: "noopener" }, "15-minute data"),
+    ", ", el("a", { href: "about.html#hobo" }, "method"), "."));
 }
 
 // ---------- water forecast (LiveOcean model) ----------

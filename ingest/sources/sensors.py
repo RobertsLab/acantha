@@ -133,8 +133,12 @@ def _synthetic_tide(t: datetime) -> float:
 
 # ---------- QC ----------
 
-def _qc(series: list[dict]) -> None:
-    """Annotate each row in place with a QARTOD-style `qc` flag and failed `qc_tests`."""
+def _qc(series: list[dict], flat_line: bool = True) -> None:
+    """Annotate each row in place with a QARTOD-style `qc` flag and failed `qc_tests`.
+
+    flat_line=False skips the flat-line test, for loggers whose resolution makes
+    hours of identical readings in still water normal (the archival HOBOs).
+    """
     vals = [r["temp_c"] for r in series]
     flat = 0
     for i, r in enumerate(series):
@@ -162,7 +166,7 @@ def _qc(series: list[dict]) -> None:
         elif flag == 1 and i == len(vals) - 1 and len(vals) > 1:
             flag = 2  # newest point: spike test needs the next reading
 
-        flat = flat + 1 if i and abs(v - vals[i - 1]) < FLAT_EPS else 0
+        flat = flat + 1 if flat_line and i and abs(v - vals[i - 1]) < FLAT_EPS else 0
         if flat >= FLAT_FAIL:
             worse(4, "flat_line")
         elif flat >= FLAT_SUSPECT:

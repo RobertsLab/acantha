@@ -12,3 +12,6 @@ photos/**/*.[hH][eE][iI][fF]
 photos/**/*.[pP][nN][gG]
 photos/**/*.[mM][oO][vV]
 photos/**/*.[xX][mM][pP]
+
+# Downloaded logger exports (baseline/hobo_archive.py)
+baseline/.cache/

@@ -53,6 +53,8 @@ imagery/             satellite pipeline (needs numpy/rasterio: pip install -r im
 baseline/            one-off: LiveOcean monthly climatology (2014-2024) at the model cells
   liveocean_climatology.py  surface + bottom temp/salinity/oxygen -> web/baseline/liveocean_climatology.json
                      (needs h5py/fsspec: pip install -r baseline/requirements.txt; committed, not re-run)
+  hobo_archive.py    archival HOBO loggers in the Step 4 bag (2024-26) -> web/baseline/thorndyke_hobo.json
+                     (stdlib only; re-run after each logger download; see docs/archival-temperature-plan.md)
 photos/              farm photos for the map (originals git-ignored; see photos/README.md)
   build.py           geotagged photos -> web/photos/ copies + photos.geojson (needs Pillow)
 web/

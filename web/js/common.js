@@ -235,6 +235,35 @@ export function sensorChart(box, stations, { hours = 72, width, height = 160, le
   }, [xs, ...ys], box);
 }
 
+// ---------- archival HOBO record (baseline/thorndyke_hobo.json) ----------
+export const cToF = (c) => (c == null ? null : c * 9 / 5 + 32);
+
+// Daily rows as objects keyed by hobo.daily_columns.
+export function hoboDays(hobo) {
+  const cols = hobo?.daily_columns || [];
+  return (hobo?.daily || []).map((r) => Object.fromEntries(cols.map((c, i) => [c, r[i]])));
+}
+
+// Whole record, one point per day: water mean plus the bag's daily max and min (any tide).
+export function hoboChart(box, hobo, { width, height = 170, legend = true } = {}) {
+  const days = hoboDays(hobo);
+  box.replaceChildren();
+  if (!days.length) return box.append(el("p", { class: "muted small" }, "No logger record."));
+  const xs = days.map((d) => Date.parse(`${d.date}T12:00:00Z`) / 1e3);
+  const ink = cssVar("--muted"), grid = cssVar("--line");
+  const ax = { stroke: ink, grid: { stroke: grid, width: 1 }, ticks: { stroke: grid }, font: "11px system-ui" };
+  const f1 = (u, v) => (v == null ? "—" : `${v.toFixed(1)}°F`);
+  return new uPlot({
+    width: width || box.clientWidth, height, tzDate: uplotTz, legend: { show: legend }, cursor: { y: false },
+    scales: { x: { time: true } },
+    axes: [{ ...ax }, { ...ax, label: "°F", size: 40, labelSize: 14 }],
+    series: [{ value: (u, v) => (v == null ? "—" : fmt({ month: "short", day: "numeric", year: "numeric" }).format(v * 1e3)) },
+      { label: "Water (daily mean)", stroke: cssVar("--series-1"), width: 2, value: f1 },
+      { label: "Bag max", stroke: cssVar("--series-2"), width: 1, value: f1 },
+      { label: "Bag min", stroke: cssVar("--series-3"), width: 1, value: f1 }],
+  }, [xs, days.map((d) => cToF(d.water_mean)), days.map((d) => cToF(d.bag_max)), days.map((d) => cToF(d.bag_min))], box);
+}
+
 // ---------- LiveOcean model ----------
 // The model is hourly. Observations are averaged onto the model hours (±30 min) so the
 // chart has one x-axis and the model-vs-observation difference is a simple per-hour pair.
