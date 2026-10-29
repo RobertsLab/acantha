@@ -169,3 +169,16 @@ button.secondary { background: transparent; color: var(--accent); }
 .sensor-row .value { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .mock-banner { font-size: 12px; padding: 4px 8px; border-radius: 6px; margin-bottom: 6px;
   background: var(--warn-bg); color: var(--warn); font-weight: 600; }
+
+/* Water card: headline number and range bar against the month's normal */
+.bignum { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.badge.cool { background: var(--bg); color: var(--series-3); }
+.rangebar { position: relative; height: 34px; margin: 10px 0 2px; }
+.rangebar::before { content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 6px; border-radius: 3px; background: var(--line); }
+.rangebar .band { position: absolute; top: 8px; height: 6px; border-radius: 3px; background: var(--accent); opacity: .35; }
+.rangebar .tick { position: absolute; top: 4px; width: 2px; height: 14px; margin-left: -1px; background: var(--accent); }
+.rangebar .dot { position: absolute; top: 4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%;
+  background: var(--accent-2); border: 2px solid var(--panel); box-sizing: border-box; }
+.rangebar .end { position: absolute; top: 18px; font-size: 11px; color: var(--muted); }
+.water-more { margin-top: 8px; }
+.water-more > div { margin-top: 4px; }

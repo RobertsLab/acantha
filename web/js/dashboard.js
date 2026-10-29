@@ -327,64 +327,90 @@ function waterLatest() {
   return st ? { ...st.latest, station: st } : null;
 }
 
-// Compare the current reading with LiveOcean's monthly surface climatology at the bay mouth,
-// and with the measured monthly normal from the archival loggers in the Step 4 bag.
+// Headline: the current reading against this month's measured farm normal (Step 4 bag loggers),
+// shown as a range bar. LiveOcean's model normal and the per-station details sit under "Details".
 const signed = (v, d) => `${v >= 0 ? "+" : "−"}${num(Math.abs(v), d)}`;
+const monthOf = (t) => Number(new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "numeric" }).format(t));
+const monthNameOf = (t) => new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "long" }).format(t);
 
-function renderNormal(latest) {
-  const cell = NORMAL?.cells?.find((c) => c.id === "thorndyke");
-  if (!cell) return null;
-  const when = latest?.t ? toDate(latest.t) : new Date();
-  const month = Number(new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "numeric" }).format(when));
-  const monthName = new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "long" }).format(when);
-  const m = cell.months.find((x) => x.month === month);
-  if (!m) return null;
-  const normF = cToF(m.surface.temp_c);
-  const parts = [];
-  if (latest?.water_temp_f != null && normF != null) {
-    parts.push(`${signed(latest.water_temp_f - normF, 1)}°F vs. normal (${num(normF, 1)}°F)`);
-  }
-  if (latest?.salinity_psu != null && m.surface.salt != null) {
-    parts.push(`salinity ${signed(latest.salinity_psu - m.surface.salt, 1)} (${num(m.surface.salt, 1)})`);
-  }
-  const head = parts.length
-    ? `${latest.station?.name || "Reading"}: ${parts.join(", ")}`
-    : `${monthName} normal: ${num(normF, 1)}°F, salinity ${num(m.surface.salt, 1)}`;
-  const far = latest?.station?.distance_km > 15 ? ` ${latest.station.name} is ${latest.station.distance_km} km away, so compare loosely.` : "";
+// Normal for the month: the farm logger record if it covers the month, else the LiveOcean model.
+function waterNormal(month) {
   const farm = HOBO?.monthly?.find((x) => x.month === month);
-  let farmLine = null;
   if (farm) {
-    const fF = cToF(farm.mean_c);
-    const vs = latest?.water_temp_f != null ? ` Reading is ${signed(latest.water_temp_f - fF, 1)}°F vs. the farm.` : "";
-    farmLine = el("div", { class: "small" },
-      `Farm logger ${monthName} normal: ${num(fF, 1)}°F (${num(cToF(farm.p10_c), 0)}–${num(cToF(farm.p90_c), 0)}°F), ` +
-      `Step 4 bag ${farm.years[0]}–${String(farm.years.at(-1)).slice(2)}.${vs}`);
+    const yrs = `${farm.years[0]}–${String(farm.years.at(-1)).slice(2)}`;
+    return { mean: cToF(farm.mean_c), lo: cToF(farm.p10_c), hi: cToF(farm.p90_c), label: "farm normal",
+      source: `Farm normal: Step 4 bag loggers, ${yrs}, with the usual range (middle 80% of readings).` };
   }
-  return el("div", { style: "margin-bottom:8px" },
-    el("div", { class: "small" }, head),
-    farmLine,
-    el("div", { class: "small muted" },
-      `Normal = LiveOcean model ${monthName} surface average (${NORMAL.years}) at the Thorndyke Bay mouth; ` +
-      `bottom oxygen normal ${num(m.bottom.do_mgl, 1)} mg/L at ${num(m.bottom.depth_m, 0)} m.${far}`));
+  const m = NORMAL?.cells?.find((c) => c.id === "thorndyke")?.months.find((x) => x.month === month);
+  return m ? { mean: cToF(m.surface.temp_c), label: "model normal",
+    source: `Normal: LiveOcean model surface average (${NORMAL.years}) at the bay mouth.` } : null;
+}
+
+function rangeBar(now, n) {
+  const pts = [now, n.mean, n.lo, n.hi].filter((v) => v != null);
+  const min = Math.floor(Math.min(...pts) - 2), max = Math.ceil(Math.max(...pts) + 2);
+  const pct = (v) => `${((v - min) / (max - min)) * 100}%`;
+  return el("div", { class: "rangebar", "aria-hidden": "true" },
+    n.lo != null ? el("div", { class: "band", style: `left:${pct(n.lo)};width:calc(${pct(n.hi)} - ${pct(n.lo)})` }) : null,
+    el("div", { class: "tick", style: `left:${pct(n.mean)}` }),
+    el("div", { class: "dot", style: `left:${pct(now)}` }),
+    el("span", { class: "end", style: "left:0" }, `${min}°`),
+    el("span", { class: "end", style: "right:0" }, `${max}°`));
 }
 
 function renderWater() {
   $("water-badge").replaceChildren(sourceBadge(D.meta, "water"));
   const stations = (D.water?.stations || []).filter((s) => s.latest);
-  const normal = renderNormal(waterLatest());
-  if (!stations.length) {
-    return $("water-now").replaceChildren(el("p", { class: "muted small" },
-      "No recent water-quality observations near Thorndyke Bay. On-site sensors are planned for Phase 2."),
-      ...(normal ? [normal] : []));
+  const latest = waterLatest();
+  const when = latest?.t ? toDate(latest.t) : new Date();
+  const month = monthOf(when), monthName = monthNameOf(when);
+  const n = waterNormal(month);
+  const now = latest?.water_temp_f;
+
+  const head = [];
+  if (now == null) {
+    head.push(el("p", { class: "muted small" }, "No recent water temperature near Thorndyke Bay."));
+    if (n) head.push(el("div", { class: "small" }, `${monthName} ${n.label}: ${num(n.mean, 1)}°F` +
+      (n.lo != null ? ` (usually ${num(n.lo, 0)}–${num(n.hi, 0)}°F)` : "")));
+  } else {
+    const st = latest.station;
+    let status = null;
+    if (n) {
+      const [text, cls] = n.lo != null && now > n.hi ? ["Warmer than usual", "warn"]
+        : n.lo != null && now < n.lo ? ["Cooler than usual", "cool"]
+        : n.lo != null ? [`Typical for ${monthName}`, "ok"] : [`${signed(now - n.mean, 1)}°F vs. normal`, "muted"];
+      status = el("span", { class: `badge ${cls}` }, text);
+    }
+    const far = st?.distance_km > 15;
+    head.push(
+      el("div", { class: "row", style: "align-items:center" },
+        el("div", { class: "bignum" }, `${num(now, 1)}°F`), status),
+      el("div", { class: "small muted" },
+        `${st?.name || "Reading"}${st?.distance_km != null ? `, ${st.distance_km} km away` : ""} · ${ago(latest.t)}` +
+        (far ? " · distant station, compare loosely" : "")));
+    if (n) {
+      head.push(rangeBar(now, n), el("div", { class: "small" },
+        `${signed(now - n.mean, 1)}°F vs. the ${monthName} ${n.label} (${num(n.mean, 1)}°F` +
+        (n.lo != null ? `, usually ${num(n.lo, 0)}–${num(n.hi, 0)}°F)` : ")")));
+    }
   }
-  $("water-now").replaceChildren(...stations.slice(0, 3).map((s) => el("div", { style: "margin-bottom:8px" },
-    el("div", { class: "row" },
-      el("div", { class: "stat" }, el("div", { class: "label" }, "Temp"), el("div", { class: "value" }, `${num(s.latest.water_temp_f, 1)}°F`)),
-      el("div", { class: "stat" }, el("div", { class: "label" }, "Salinity"), el("div", { class: "value" }, `${num(s.latest.salinity_psu, 1)}`)),
-      el("div", { class: "stat" }, el("div", { class: "label" }, "Oxygen"), el("div", { class: "value" }, s.latest.do_mgl == null ? "—" : `${num(s.latest.do_mgl, 1)} mg/L`))),
-    el("div", { class: "small muted" }, `${s.name}${s.distance_km != null ? ` (${s.distance_km} km)` : ""}${s.latest.depth_m != null ? `, ${num(s.latest.depth_m, 0)} m depth` : ""}, ${ago(s.latest.t)}`))),
-    ...(normal ? [normal] : []),
-    ...(D.water.notes || []).map((n) => el("div", { class: "small muted" }, n)));
+
+  // Details: model normal, every station's latest values, feed notes.
+  const lo = NORMAL?.cells?.find((c) => c.id === "thorndyke")?.months.find((x) => x.month === month);
+  const details = [
+    n ? el("div", { class: "small muted" }, n.source) : null,
+    lo ? el("div", { class: "small muted" }, `LiveOcean model ${monthName} normal at the bay mouth (${NORMAL.years}): ` +
+      `${num(cToF(lo.surface.temp_c), 1)}°F surface, salinity ${num(lo.surface.salt, 1)}, ` +
+      `bottom oxygen ${num(lo.bottom.do_mgl, 1)} mg/L at ${num(lo.bottom.depth_m, 0)} m.`) : null,
+    ...stations.map((s) => el("div", { class: "small" },
+      `${s.name}: ${num(s.latest.water_temp_f, 1)}°F` +
+      (s.latest.salinity_psu != null ? `, salinity ${num(s.latest.salinity_psu, 1)}` : "") +
+      (s.latest.do_mgl != null ? `, oxygen ${num(s.latest.do_mgl, 1)} mg/L` : "") +
+      `${s.distance_km != null ? ` (${s.distance_km} km)` : ""}${s.latest.depth_m != null ? `, ${num(s.latest.depth_m, 0)} m depth` : ""}, ${ago(s.latest.t)}`)),
+    ...(D.water?.notes || []).map((t) => el("div", { class: "small muted" }, t)),
+  ].filter(Boolean);
+  $("water-now").replaceChildren(...head,
+    details.length ? el("details", { class: "water-more" }, el("summary", { class: "small" }, "Details"), ...details) : "");
 }
 
 // ---------- archival bag temperature (HOBO loggers, Step 4) ----------
