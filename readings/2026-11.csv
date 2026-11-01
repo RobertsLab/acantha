@@ -1,0 +1,2 @@
+t,device_id,temp_c,temp_f,exposed,qc,qc_tests,battery_v,rssi,snr
+2026-11-01T00:09:29Z,little-dragon-01,7.8,46.0,false,2,,3.612,-58,13.5
