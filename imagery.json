@@ -1,0 +1,511 @@
+{
+ "generated_at": "2026-11-13T02:43:24Z",
+ "grid": {
+  "crs": "EPSG:32610",
+  "res_m": 10,
+  "width": 1734,
+  "height": 2010,
+  "bounds": [
+   511200,
+   5285160,
+   528540,
+   5305260
+  ]
+ },
+ "site_radius_m": 1500,
+ "tide_station": {
+  "id": "9445088",
+  "name": "Lofall",
+  "lat": 47.815,
+  "lon": -122.6567
+ },
+ "tide_datum": "MLLW",
+ "latest_clear": "s2a_20261028",
+ "scenes": [
+  {
+   "id": "s2c_20261112",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2c",
+   "date": "2026-11-12",
+   "datetime": "2026-11-12T19:11:09Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2C_10TET_20261112_0_L2A",
+    "S2C_10UEU_20261112_0_L2A"
+   ],
+   "clear_pct": 0.0,
+   "cloud_pct": 100.0,
+   "coverage_pct": 80.3,
+   "site_clear_pct": 0.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 8.85,
+   "products": {}
+  },
+  {
+   "id": "s2b_20261110",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2b",
+   "date": "2026-11-10",
+   "datetime": "2026-11-10T19:21:09Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2B_10TET_20261110_0_L2A",
+    "S2B_10UEU_20261110_0_L2A"
+   ],
+   "clear_pct": 0.0,
+   "cloud_pct": 100.0,
+   "coverage_pct": 100.0,
+   "site_clear_pct": 0.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 7.54,
+   "products": {}
+  },
+  {
+   "id": "s2b_20261107",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2b",
+   "date": "2026-11-07",
+   "datetime": "2026-11-07T19:11:12Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2B_10TET_20261107_0_L2A",
+    "S2B_10UEU_20261107_0_L2A"
+   ],
+   "clear_pct": 0.0,
+   "cloud_pct": 100.0,
+   "coverage_pct": 80.7,
+   "site_clear_pct": 0.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 6.95,
+   "products": {}
+  },
+  {
+   "id": "s2c_20261105",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2c",
+   "date": "2026-11-05",
+   "datetime": "2026-11-05T19:21:04Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2C_10TET_20261105_0_L2A",
+    "S2C_10UEU_20261105_0_L2A"
+   ],
+   "clear_pct": 28.7,
+   "cloud_pct": 63.2,
+   "coverage_pct": 100.0,
+   "site_clear_pct": 66.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 8.61,
+   "products": {
+    "truecolor": {
+     "path": "products/20261105_s2c_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "s2a_20261104",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2a",
+   "date": "2026-11-04",
+   "datetime": "2026-11-04T19:11:18Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2A_10TET_20261104_0_L2A",
+    "S2A_10UEU_20261104_0_L2A"
+   ],
+   "clear_pct": 0.0,
+   "cloud_pct": 100.0,
+   "coverage_pct": 87.7,
+   "site_clear_pct": 0.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 9.24,
+   "products": {}
+  },
+  {
+   "id": "s2c_20261102",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2c",
+   "date": "2026-11-02",
+   "datetime": "2026-11-02T19:11:08Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2C_10TET_20261102_0_L2A",
+    "S2C_10UEU_20261102_0_L2A"
+   ],
+   "clear_pct": 0.0,
+   "cloud_pct": 100.0,
+   "coverage_pct": 82.4,
+   "site_clear_pct": 0.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 10.66,
+   "products": {}
+  },
+  {
+   "id": "s2b_20261031",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2b",
+   "date": "2026-10-31",
+   "datetime": "2026-10-31T19:21:09Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2B_10TET_20261031_0_L2A",
+    "S2B_10UEU_20261031_0_L2A"
+   ],
+   "clear_pct": 0.0,
+   "cloud_pct": 100.0,
+   "coverage_pct": 100.0,
+   "site_clear_pct": 0.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 10.31,
+   "products": {}
+  },
+  {
+   "id": "s2a_20261028",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2a",
+   "date": "2026-10-28",
+   "datetime": "2026-10-28T19:21:18Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2A_10TET_20261028_0_L2A",
+    "S2A_10UEU_20261028_1_L2A"
+   ],
+   "clear_pct": 60.0,
+   "cloud_pct": 37.9,
+   "coverage_pct": 100.0,
+   "site_clear_pct": 83.9,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 7.41,
+   "products": {
+    "truecolor": {
+     "path": "products/20261028_s2a_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "s2b_20261028",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2b",
+   "date": "2026-10-28",
+   "datetime": "2026-10-28T19:11:12Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2B_10TET_20261028_1_L2A",
+    "S2B_10UEU_20261028_2_L2A"
+   ],
+   "clear_pct": 56.3,
+   "cloud_pct": 41.0,
+   "coverage_pct": 82.8,
+   "site_clear_pct": 80.3,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 7.48,
+   "products": {
+    "truecolor": {
+     "path": "products/20261028_s2b_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "s2c_20261026",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2c",
+   "date": "2026-10-26",
+   "datetime": "2026-10-26T19:21:07Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2C_10TET_20261026_0_L2A",
+    "S2C_10UEU_20261026_0_L2A"
+   ],
+   "clear_pct": 20.0,
+   "cloud_pct": 78.4,
+   "coverage_pct": 100.0,
+   "site_clear_pct": 1.8,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 6.08,
+   "products": {
+    "truecolor": {
+     "path": "products/20261026_s2c_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "s2c_20261023",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2c",
+   "date": "2026-10-23",
+   "datetime": "2026-10-23T19:11:11Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2C_10TET_20261023_0_L2A",
+    "S2C_10UEU_20261023_0_L2A"
+   ],
+   "clear_pct": 99.0,
+   "cloud_pct": 1.0,
+   "coverage_pct": 86.5,
+   "site_clear_pct": 100.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 6.63,
+   "products": {
+    "truecolor": {
+     "path": "products/20261023_s2c_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "s2b_20261021",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2b",
+   "date": "2026-10-21",
+   "datetime": "2026-10-21T19:21:08Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2B_10TET_20261021_0_L2A",
+    "S2B_10UEU_20261021_0_L2A"
+   ],
+   "clear_pct": 96.7,
+   "cloud_pct": 3.3,
+   "coverage_pct": 100.0,
+   "site_clear_pct": 99.9,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 8.28,
+   "products": {
+    "truecolor": {
+     "path": "products/20261021_s2b_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "s2b_20261018",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2b",
+   "date": "2026-10-18",
+   "datetime": "2026-10-18T19:11:11Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2B_10TET_20261018_0_L2A",
+    "S2B_10UEU_20261018_0_L2A"
+   ],
+   "clear_pct": 10.9,
+   "cloud_pct": 89.1,
+   "coverage_pct": 82.5,
+   "site_clear_pct": 1.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 9.65,
+   "products": {
+    "truecolor": {
+     "path": "products/20261018_s2b_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "s2c_20261016",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2c",
+   "date": "2026-10-16",
+   "datetime": "2026-10-16T19:21:10Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2C_10TET_20261016_0_L2A",
+    "S2C_10UEU_20261016_1_L2A"
+   ],
+   "clear_pct": 79.7,
+   "cloud_pct": 20.3,
+   "coverage_pct": 100.0,
+   "site_clear_pct": 62.9,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 9.5,
+   "products": {
+    "truecolor": {
+     "path": "products/20261016_s2c_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "s2a_20261015",
+   "sensor": "sentinel-2",
+   "platform": "sentinel-2a",
+   "date": "2026-10-15",
+   "datetime": "2026-10-15T19:11:23Z",
+   "catalog": "earth-search",
+   "items": [
+    "S2A_10TET_20261015_0_L2A",
+    "S2A_10UEU_20261015_0_L2A"
+   ],
+   "clear_pct": 24.5,
+   "cloud_pct": 75.5,
+   "coverage_pct": 90.2,
+   "site_clear_pct": 0.0,
+   "site_coverage_pct": 100.0,
+   "tide_ft": 9.04,
+   "products": {
+    "truecolor": {
+     "path": "products/20261015_s2a_truecolor.webp",
+     "corners": [
+      [
+       -122.850664,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.90057
+      ],
+      [
+       -122.618119,
+       47.719145
+      ],
+      [
+       -122.850664,
+       47.719145
+      ]
+     ]
+    }
+   }
+  }
+ ],
+ "errors": [],
+ "attribution": "Contains modified Copernicus Sentinel data 2026"
+}
