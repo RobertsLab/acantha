@@ -104,6 +104,7 @@
       ["liveocean", "Water forecast (model)", "UW LiveOcean surface temperature and salinity, via NANOOS/IOOS THREDDS", "https://faculty.washington.edu/pmacc/LO/LiveOcean.html"],
       ["shellfish", "Biotoxin status and growing areas", "WA Department of Health", "https://doh.wa.gov/community-and-environment/shellfish"],
       ["sun", "Sunrise and sunset", "Computed (NOAA solar algorithm)", null],
+      ["notify", "Phone alerts", "ntfy push notifications when conditions change: how to subscribe", "https://github.com/RobertsLab/acantha/blob/main/docs/alerts.md"],
       ["briefing", "Briefing (written by Claude)", "Claude, from the feeds above; reused until they change. Advisory only", "https://www.anthropic.com/claude"],
     ];
     const { meta, liveocean, water } = await loadAll(["meta", "liveocean", "water"]);

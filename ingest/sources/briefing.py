@@ -20,7 +20,7 @@ import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from config import BRIEFING_MIN_MINUTES, BRIEFING_MODEL, BRIEFING_THRESHOLDS, SITE
+from config import BRIEFING_MIN_MINUTES, BRIEFING_MODEL, DEFAULT_THRESHOLDS, SITE
 from sources.common import iso, parse_iso, utcnow
 
 TZ = ZoneInfo(SITE["timezone"])
@@ -85,12 +85,12 @@ def _compass(deg) -> str | None:
 def digest(data: dict, now: datetime) -> dict:
     """Condense the other sources' output into what the briefing needs."""
     hourly = (data.get("forecast") or {}).get("hourly", [])
-    th = BRIEFING_THRESHOLDS
+    th = DEFAULT_THRESHOLDS
     out: dict = {
         "today": _local(now, "%A, %B %-d"),
         "now": _local(now),
         "vibrio_season": 5 <= now.astimezone(TZ).month <= 9,
-        "default_thresholds": BRIEFING_THRESHOLDS,
+        "default_thresholds": DEFAULT_THRESHOLDS,
     }
 
     lows = []
@@ -172,7 +172,7 @@ def _hash_view(d: dict) -> dict:
     """The digest minus what changes every run without changing the story."""
     v = {k: val for k, val in d.items() if k != "now"}
     v["farm_sensors"] = [{"name": s["name"], "status": s["status"],
-                          "hot": bool(s["out_of_water"] and (s["temp_f"] or 0) >= BRIEFING_THRESHOLDS["heat_f"])}
+                          "hot": bool(s["out_of_water"] and (s["temp_f"] or 0) >= DEFAULT_THRESHOLDS["heat_f"])}
                          for s in d.get("farm_sensors", [])]
     v["water_observed"] = [{**w, "temp_f": round(w["temp_f"])} for w in d.get("water_observed", [])]
     return v
