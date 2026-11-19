@@ -27,6 +27,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install briefing dependency
+        # Only sources/briefing.py needs a package; every other source is stdlib only.
+        run: pip install -r ingest/requirements.txt
+
       - id: pages
         uses: actions/configure-pages@v5
 
@@ -37,6 +41,8 @@ jobs:
           # Farm sensors via The Things Network; unset until hardware is deployed.
           TTN_APP_ID: ${{ vars.TTN_APP_ID }}
           TTN_API_KEY: ${{ secrets.TTN_API_KEY }}
+          # Dashboard briefing written by Claude; the card stays hidden while unset.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Archive sensor readings (sensor-data branch)
         # Permanent copy of every reading; the site keeps only 7 days. Never blocks the deploy.

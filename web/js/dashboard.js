@@ -7,13 +7,14 @@ import {
 
 const $ = (id) => document.getElementById(id);
 
-const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors", "liveocean"]);
+const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors", "liveocean", "briefing"]);
 const NORMAL = await load("liveocean_climatology", "baseline/liveocean_climatology.json");
 const HOBO = await load("thorndyke_hobo", "baseline/thorndyke_hobo.json");
 D.imagery = await load("imagery", "data/imagery/imagery.json");
 let S = getSettings();
 
 function render() {
+  renderBriefing();
   renderAlerts();
   renderFlags();
   renderTide();
@@ -25,6 +26,20 @@ function render() {
   renderModel();
   renderSatellite();
   renderShellfish();
+}
+
+// ---------- briefing (written by Claude in the workflow; see ingest/sources/briefing.py) ----------
+function renderBriefing() {
+  const b = D.briefing;
+  if (!b?.configured || !b.headline) return;
+  const old = Date.now() - toDate(b.generated_at) > 6 * 3600e3;
+  $("brief-card").hidden = false;
+  $("brief-badge").replaceChildren(el("span", { class: old ? "badge warn" : "badge muted" }, `written ${ago(b.generated_at)}`));
+  $("brief-now").replaceChildren(
+    el("p", { class: "brief-head" }, b.headline),
+    el("ul", { class: "brief-points" }, ...b.points.map((p) => el("li", {}, p))),
+    el("p", { class: "small muted" }, "Written by Claude from the data on this page, using the default thresholds. " +
+      "Advisory: the flags below and DOH status are the authority."));
 }
 
 // ---------- alerts ----------
