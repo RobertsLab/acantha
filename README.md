@@ -100,6 +100,7 @@ docs/                plans (LiveOcean, imagery, archival temperature), sensor ho
 .github/workflows/update.yml   scheduled fetch + Pages deploy (copies the imagery-data branch in,
                                archives sensor readings to the sensor-data branch)
 .github/workflows/imagery.yml  twice-daily imagery build -> imagery-data branch
+.github/workflows/keepalive.yml twice-monthly re-enable so GitHub doesn't switch off the schedules
 ```
 
 ## Adding a data source
@@ -121,8 +122,9 @@ page shows how old the data is.
    to turn on the briefing card, and an `NTFY_TOPIC` secret to send phone alerts (docs/alerts.md).
 4. The workflow runs on every push to `main`, every ~20 minutes, and on demand (**Actions → Run workflow**).
 
-GitHub turns off scheduled workflows in public repos after 60 days with no commits. Push a commit
-or re-enable the workflow when that happens.
+GitHub turns off scheduled workflows in public repos after 60 days with no activity.
+`.github/workflows/keepalive.yml` re-enables them through the API twice a month to prevent that.
+If a workflow is ever disabled anyway, re-enable it under **Actions**.
 
 ## Known gaps in the MVP
 
