@@ -75,7 +75,17 @@ LIVEOCEAN_CELLS = [
 # claude-haiku-5-5 also works at a fraction of the cost.
 BRIEFING_MODEL = "claude-opus-5-5"
 BRIEFING_MIN_MINUTES = 60     # rewrite at most this often, unless alerts or DOH status change
-# Thresholds the briefing compares against: the page's defaults (DEFAULTS in web/js/common.js).
-# The page's own flags use each viewer's saved settings instead.
-BRIEFING_THRESHOLDS = {"low_tide_ft": 0.0, "heat_f": 75, "rain_in_24h": 1.0, "gust_mph": 20,
-                       "vibrio_water_f": 60}
+
+# Thresholds the briefing and phone alerts compare against: the page's defaults (DEFAULTS in
+# web/js/common.js). The page's own flags use each viewer's saved settings instead.
+DEFAULT_THRESHOLDS = {"low_tide_ft": 0.0, "heat_f": 75, "rain_in_24h": 1.0, "gust_mph": 20,
+                      "vibrio_water_f": 60}
+
+# Phone push alerts through ntfy (sources/notify.py; how to subscribe: docs/alerts.md).
+# The topic name is the password, so it lives only in the environment:
+#   NTFY_TOPIC                (GitHub Actions secret; unset = alerts are logged, not sent)
+#   NTFY_TOKEN                (optional, for a reserved/protected topic)
+NTFY_SERVER = "https://ntfy.sh"
+NOTIFY_QUIET_HOURS = (21, 6)  # local; only NWS alerts and DOH changes are sent overnight
+NOTIFY_COOLDOWN_HOURS = 12    # the same alert is not repeated within this window
+SITE_URL = "https://robertslab.github.io/acantha/"

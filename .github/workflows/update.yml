@@ -43,6 +43,9 @@ jobs:
           TTN_API_KEY: ${{ secrets.TTN_API_KEY }}
           # Dashboard briefing written by Claude; the card stays hidden while unset.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Phone push alerts via ntfy (docs/alerts.md); logged but not sent while unset.
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
 
       - name: Archive sensor readings (sensor-data branch)
         # Permanent copy of every reading; the site keeps only 7 days. Never blocks the deploy.
