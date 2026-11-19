@@ -1,0 +1,2 @@
+# Only needed for the dashboard briefing (sources/briefing.py); every other source is stdlib only.
+anthropic>=2.10,<3

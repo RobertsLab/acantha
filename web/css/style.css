@@ -105,6 +105,10 @@ header.top nav a.feedback { color: var(--accent); border: 1px solid var(--line);
 .flags li.bad { border-color: var(--bad); background: var(--bad-bg); }
 .flags li b { display: block; }
 
+.brief-head { font-size: 16px; font-weight: 650; margin: 0 0 6px; }
+.brief-points { margin: 0 0 6px; padding-left: 18px; }
+.brief-points li { margin-bottom: 4px; }
+
 .alert {
   border-radius: 8px; padding: 8px 10px; margin-bottom: 8px;
   background: var(--warn-bg); border-left: 4px solid var(--warn);

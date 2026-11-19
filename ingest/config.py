@@ -68,3 +68,14 @@ LIVEOCEAN_CELLS = [
     {"id": "dabob", "name": "ORCA Dabob Bay buoy", "eta": 788, "xi": 543,
      "lat": 47.8041, "lon": -122.8030},  # for model-vs-buoy comparison
 ]
+
+# Plain-language briefing at the top of the dashboard, written by Claude from this
+# run's data (sources/briefing.py). Needs ANTHROPIC_API_KEY (a GitHub Actions secret
+# in CI) and `pip install -r ingest/requirements.txt`; without the key the card is hidden.
+# claude-haiku-5-5 also works at a fraction of the cost.
+BRIEFING_MODEL = "claude-opus-5-5"
+BRIEFING_MIN_MINUTES = 60     # rewrite at most this often, unless alerts or DOH status change
+# Thresholds the briefing compares against: the page's defaults (DEFAULTS in web/js/common.js).
+# The page's own flags use each viewer's saved settings instead.
+BRIEFING_THRESHOLDS = {"low_tide_ft": 0.0, "heat_f": 75, "rain_in_24h": 1.0, "gust_mph": 20,
+                       "vibrio_water_f": 60}

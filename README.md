@@ -1,9 +1,10 @@
 # acantha: Thorndyke Bay conditions portal
 
 A map-based portal of near-real-time conditions for oyster growers in Thorndyke Bay (Hood Canal, WA):
-tides and low-tide work windows, weather and marine alerts, radar, rain, water quality and the
-LiveOcean water forecast, shellfish status, and Sentinel-2 satellite imagery. The map also shows the
-farm layout, tide-height lines, geotagged farm photos, and on-farm temperature sensors.
+a short plain-language briefing written by Claude, tides and low-tide work windows, weather and
+marine alerts, radar, rain, water quality and the LiveOcean water forecast, shellfish status, and
+Sentinel-2 satellite imagery. The map also shows the farm layout, tide-height lines, geotagged
+farm photos, and on-farm temperature sensors.
 See [PLAN.md](PLAN.md) for the full roadmap.
 
 It started as the **Phase 1 MVP** (public data only) and now includes the first Phase 2 pieces
@@ -11,7 +12,8 @@ It started as the **Phase 1 MVP** (public data only) and now includes the first 
 
 ```
 GitHub Actions: update.yml (every ~20 min)
-  └─ ingest/fetch.py  → pulls NOAA, NWS, WA DOH, NANOOS/IOOS, IEM, LiveOcean, The Things Network
+  └─ ingest/fetch.py  → pulls NOAA, NWS, WA DOH, NANOOS/IOOS, IEM, LiveOcean, The Things Network,
+                         then asks Claude for a briefing from that data
        └─ writes web/data/*.json
             └─ GitHub Pages serves web/ (MapLibre map + uPlot charts)
 GitHub Actions: imagery.yml (twice daily)
@@ -20,7 +22,9 @@ GitHub Actions: imagery.yml (twice daily)
 
 ## Run locally
 
-Python 3.9+ with only the standard library, no installs needed.
+Python 3.9+ with only the standard library, no installs needed. The one exception is the
+briefing: with `ANTHROPIC_API_KEY` set and `pip install -r ingest/requirements.txt`, `fetch.py`
+also writes `briefing.json`. Without the key the briefing card is simply hidden.
 
 ```bash
 python3 ingest/fetch.py
@@ -57,8 +61,11 @@ ingest/
     sensors.py       farm LoRaWAN temperature nodes via The Things Network
                      (SENSORS_MOCK=1 python3 ingest/fetch.py --only sensors for fake data;
                      adding gateways and sensors: docs/sensors.md)
+    briefing.py      runs last: condenses the other outputs and has Claude write a headline + 2-5 points
+                     (model in config.py; reused until the inputs change, at most hourly otherwise)
   archive_sensors.py appends every sensor reading to monthly CSVs on the sensor-data branch
-  tests/             unittest tests (sensor archive, LiveOcean ingest, HOBO archive)
+  requirements.txt   anthropic SDK, needed only by briefing.py
+  tests/             unittest tests (sensor archive, LiveOcean ingest, HOBO archive, briefing)
 imagery/             satellite pipeline (needs numpy/rasterio: pip install -r imagery/requirements.txt)
   run.py             Sentinel-2 true color + clear-sky % + tide at capture -> imagery.json
   grid.py            shared UTM 10N 10 m grid every sensor/model output is resampled onto
@@ -106,7 +113,9 @@ page shows how old the data is.
 
 1. Push to GitHub.
 2. In **Settings → Pages**, set **Source: GitHub Actions**.
-3. The workflow runs on every push to `main`, every ~20 minutes, and on demand (**Actions → Run workflow**).
+3. Optional: add an `ANTHROPIC_API_KEY` repository secret (**Settings → Secrets and variables → Actions**)
+   to turn on the briefing card.
+4. The workflow runs on every push to `main`, every ~20 minutes, and on demand (**Actions → Run workflow**).
 
 GitHub turns off scheduled workflows in public repos after 60 days with no commits. Push a commit
 or re-enable the workflow when that happens.
