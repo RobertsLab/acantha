@@ -89,3 +89,11 @@ NTFY_SERVER = "https://ntfy.sh"
 NOTIFY_QUIET_HOURS = (21, 6)  # local; only NWS alerts and DOH changes are sent overnight
 NOTIFY_COOLDOWN_HOURS = 12    # the same alert is not repeated within this window
 SITE_URL = "https://robertslab.github.io/acantha/"
+
+# Farm mortality log (sources/mortality.py; how to add an entry: docs/mortality-log.md).
+# Entries are filed with a GitHub issue form and kept in entries.csv on MORTALITY_BRANCH.
+#   MORTALITY_MOCK=1          fake entries instead, for layout work
+GITHUB_REPO = "RobertsLab/acantha"
+MORTALITY_BRANCH = "mortality-log"
+MORTALITY_WEEKS = 12          # weeks in the dashboard strip
+MORTALITY_KEEP_DAYS = 365     # entries kept in the published mortality.json (the CSV keeps all)

@@ -7,7 +7,7 @@ import {
 
 const $ = (id) => document.getElementById(id);
 
-const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors", "liveocean", "briefing"]);
+const D = await loadAll(["meta", "tides", "sun", "forecast", "alerts", "observations", "rain", "water", "shellfish", "sensors", "liveocean", "briefing", "mortality"]);
 const NORMAL = await load("liveocean_climatology", "baseline/liveocean_climatology.json");
 const HOBO = await load("thorndyke_hobo", "baseline/thorndyke_hobo.json");
 D.imagery = await load("imagery", "data/imagery/imagery.json");
@@ -21,6 +21,7 @@ function render() {
   renderWeather();
   renderRain();
   renderSensors();
+  renderMortality();
   renderWater();
   renderHobo();
   renderModel();
@@ -115,6 +116,14 @@ function renderFlags() {
   }
   for (const s of (D.sensors?.stations || []).filter((x) => x.status !== "live")) {
     add("warn", `Sensor ${s.status}: ${s.name}${tag}`, `Last reading ${ago(s.last_seen)}. Check battery, mount, or gateway.`);
+  }
+
+  // Mortality log: a yellow or red entry from the last 10 days stays on the flags.
+  const m = D.mortality?.latest;
+  if (m && m.status !== "green" && Date.now() - toDate(`${m.date}T12:00:00`) < 10 * 86400e3) {
+    add(m.status === "red" ? "bad" : "warn",
+      `Mortality logged ${MORT[m.status].label.toLowerCase()} on ${fmtDate(m.date)}${D.mortality.mock ? " (mock data)" : ""}`,
+      [m.percent_dead != null ? `${num(m.percent_dead)}% dead` : null, m.location, m.notes].filter(Boolean).join(" · "));
   }
 
   // Water temperature (Vibrio season, May–Sept). Observed if it is current, else the LiveOcean
@@ -331,6 +340,48 @@ function renderSensors() {
       el("div", { class: "value" }, s.latest ? `${num(s.latest.temp_f, 1)}°F` : "—"))),
   );
   sensorChart($("sensors-chart"), stations, { hours: 72, height: 180, sun: D.sun });
+}
+
+// ---------- mortality log (filed by growers; see docs/mortality-log.md) ----------
+const MORT = {
+  green: { label: "Green", text: "nothing of concern", cls: "good" },
+  yellow: { label: "Yellow", text: "some concern", cls: "warn" },
+  red: { label: "Red", text: "very concerned, high mortality", cls: "bad" },
+};
+
+function renderMortality() {
+  const m = D.mortality;
+  $("mort-card").hidden = !m?.configured;
+  if (!m?.configured) return;
+  const L = m.latest;
+  $("mort-badge").replaceChildren(L
+    ? el("span", { class: "badge muted" }, `last entry ${fmtDate(L.date)}`)
+    : el("span", { class: "badge muted" }, "no entries yet"));
+  const detail = (e) => [e.percent_dead != null ? `${num(e.percent_dead)}% dead` : null, e.location, e.ploidy]
+    .filter(Boolean).join(" · ");
+  const weekLabel = (w) => `Week of ${fmtDate(w.start)}: ` +
+    (w.status ? `${MORT[w.status].label}${w.n > 1 ? ` (worst of ${w.n} entries)` : ""}` : "no entry");
+  $("mort-now").replaceChildren(
+    m.mock ? el("div", { class: "mock-banner" }, "Mock data: simulated entries, not real observations") : "",
+    L ? el("div", {},
+      el("div", { class: "mort-status", style: `color:var(--${MORT[L.status].cls})` },
+        MORT[L.status].label, el("small", {}, ` ${MORT[L.status].text}`)),
+      detail(L) ? el("div", { class: "small" }, detail(L)) : "",
+      L.notes ? el("div", { class: "small muted" }, L.notes) : "")
+      : el("p", { class: "muted small", style: "margin:0" },
+        "A weekly green / yellow / red check on mortality, filed by the farm. Nothing has been logged yet."),
+    el("div", { class: "mort-strip", role: "list", "aria-label": `Last ${m.weeks.length} weeks` },
+      ...m.weeks.map((w) => el("div", { class: `mort-wk ${w.status ? MORT[w.status].cls : "none"}`, role: "listitem",
+        title: weekLabel(w), "aria-label": weekLabel(w) }, w.status ? MORT[w.status].label[0] : ""))),
+    el("div", { class: "mort-ends small muted" },
+      el("span", {}, `Week of ${fmtDate(m.weeks[0].start).replace(/, \d+$/, "")}`), el("span", {}, "This week")),
+    el("div", { class: "small", style: "margin-top:8px" },
+      el("a", { href: m.log_url, target: "_blank", rel: "noopener" }, "Log this week →"),
+      m.total ? " · " : "",
+      m.total ? el("a", { href: m.archive_url, target: "_blank", rel: "noopener" }, `All ${m.total} entries (CSV)`) : ""),
+    el("p", { class: "small muted", style: "margin:6px 0 0" },
+      "A record of what the farm saw, not a forecast."),
+  );
 }
 
 // ---------- water ----------
