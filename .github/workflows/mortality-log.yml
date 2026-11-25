@@ -1,0 +1,86 @@
+name: Mortality log entry
+
+# Files a "Mortality log entry" issue form into entries.csv on the mortality-log branch,
+# then comments and closes the issue. Editing the issue later rewrites its row.
+# How growers use it: docs/mortality-log.md
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: write   # pushes to the mortality-log branch
+  issues: write     # comments on and closes the entry
+
+concurrency:
+  group: mortality-log   # one entry at a time, so pushes never race
+  cancel-in-progress: false
+
+jobs:
+  log:
+    if: >-
+      contains(github.event.issue.labels.*.name, 'mortality-log') ||
+      startsWith(github.event.issue.title, 'Mortality log')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      # Issue text is untrusted: it only ever reaches the shell and Python through these variables.
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+      ISSUE_CREATED_AT: ${{ github.event.issue.created_at }}
+      ISSUE_BODY: ${{ github.event.issue.body }}
+    steps:
+      - name: Only people with write access can log
+        id: who
+        run: |
+          perm=$(gh api "repos/$REPO/collaborators/$ISSUE_AUTHOR/permission" --jq .permission 2>/dev/null || echo none)
+          if [ "$perm" = "admin" ] || [ "$perm" = "write" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body \
+              "Not logged: only people with write access to this repository can add to the mortality log."
+            gh issue close "$ISSUE_NUMBER" --repo "$REPO" --reason "not planned" || true
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.who.outputs.ok == 'true'
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        if: steps.who.outputs.ok == 'true'
+        with:
+          python-version: "3.12"
+
+      - name: File the entry (mortality-log branch)
+        if: steps.who.outputs.ok == 'true'
+        run: |
+          gh label create mortality-log --repo "$REPO" --color 0f6e6a \
+            --description "Weekly farm mortality check" 2>/dev/null || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label mortality-log || true
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch --depth 1 origin mortality-log; then
+            git worktree add -B mortality-log ../log FETCH_HEAD
+          else
+            git worktree add --detach ../log
+            git -C ../log checkout --orphan mortality-log
+            git -C ../log rm -rfq .
+          fi
+
+          if python ingest/mortality_log.py ../log > result.txt; then
+            git -C ../log add -A
+            if ! git -C ../log diff --cached --quiet; then
+              git -C ../log commit -qm "Mortality log entry from issue #$ISSUE_NUMBER"
+              git -C ../log push origin mortality-log
+            fi
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file result.txt
+            gh issue close "$ISSUE_NUMBER" --repo "$REPO" || true
+          else
+            # Validation failed: say why and leave the issue open to be edited.
+            cat result.txt
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file result.txt
+          fi

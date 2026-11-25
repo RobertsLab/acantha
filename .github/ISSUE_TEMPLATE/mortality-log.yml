@@ -1,0 +1,53 @@
+name: Mortality log entry
+description: Weekly green / yellow / red check on oyster mortality at the farm
+title: "Mortality log"
+labels: ["mortality-log"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One entry per week is enough, more if something changes. Only the status is required.
+        A workflow files the entry and closes this issue. It shows on the portal within about 20 minutes.
+        Entries are public. To correct one, edit its issue.
+  - type: dropdown
+    id: status
+    attributes:
+      label: Status
+      options:
+        - "Green: nothing of concern"
+        - "Yellow: some concern"
+        - "Red: very concerned, seeing high mortality"
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: Date observed
+      description: YYYY-MM-DD. Leave blank for today.
+      placeholder: "2026-11-25"
+  - type: input
+    id: percent
+    attributes:
+      label: Percent dead
+      description: Rough share of dead oysters in what you looked at, 0 to 100. Leave blank if not counted.
+      placeholder: "5"
+  - type: input
+    id: location
+    attributes:
+      label: Location or bag
+      description: Where on the farm, or which bag or line.
+      placeholder: "Step 4 bag"
+  - type: dropdown
+    id: ploidy
+    attributes:
+      label: Ploidy
+      options:
+        - Diploid
+        - Triploid
+        - Mixed
+        - Not sure
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Size class, gapers, smell, fouling, recent handling, anything unusual. Up to 500 characters are kept.

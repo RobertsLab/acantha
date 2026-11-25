@@ -2,7 +2,7 @@
 
 A map-based portal of near-real-time conditions for oyster growers in Thorndyke Bay (Hood Canal, WA):
 a short plain-language briefing written by Claude, tides and low-tide work windows, weather and
-marine alerts, radar, rain, water quality and the LiveOcean water forecast, shellfish status, and
+marine alerts, radar, rain, a farm mortality log, water quality and the LiveOcean water forecast, shellfish status, and
 Sentinel-2 satellite imagery. The map also shows the farm layout, tide-height lines, geotagged
 farm photos, and on-farm temperature sensors.
 See [PLAN.md](PLAN.md) for the full roadmap.
@@ -62,13 +62,16 @@ ingest/
     sensors.py       farm LoRaWAN temperature nodes via The Things Network
                      (SENSORS_MOCK=1 python3 ingest/fetch.py --only sensors for fake data;
                      adding gateways and sensors: docs/sensors.md)
+    mortality.py     farm mortality log: weekly green/yellow/red entries from the mortality-log branch
+                     (MORTALITY_MOCK=1 for fake entries; adding an entry: docs/mortality-log.md)
     briefing.py      condenses the other outputs and has Claude write a headline + 2-5 points
                      (model in config.py; reused until the inputs change, at most hourly otherwise)
     notify.py        runs last: ntfy push alerts when a farm-relevant condition starts
                      (fixed rules, deduplicated, quiet hours; subscribing: docs/alerts.md)
   archive_sensors.py appends every sensor reading to monthly CSVs on the sensor-data branch
+  mortality_log.py   files a "Mortality log entry" issue form into entries.csv on the mortality-log branch
   requirements.txt   anthropic SDK, needed only by briefing.py
-  tests/             unittest tests (sensor archive, LiveOcean ingest, HOBO archive, briefing, alerts)
+  tests/             unittest tests (sensor archive, LiveOcean ingest, HOBO archive, briefing, alerts, mortality log)
 imagery/             satellite pipeline (needs numpy/rasterio: pip install -r imagery/requirements.txt)
   run.py             Sentinel-2 true color + clear-sky % + tide at capture -> imagery.json
   grid.py            shared UTM 10N 10 m grid every sensor/model output is resampled onto
@@ -96,9 +99,11 @@ web/
   photos/            web copies of farm photos + photos.geojson (from photos/build.py)
   js/, css/, icon.svg, manifest.webmanifest
 docs/                plans (LiveOcean, imagery, archival temperature), sensor how-to, phone alerts,
-                     solar gateway assembly
+                     mortality log, solar gateway assembly
 .github/workflows/update.yml   scheduled fetch + Pages deploy (copies the imagery-data branch in,
                                archives sensor readings to the sensor-data branch)
+.github/workflows/mortality-log.yml  files a mortality log entry when its issue form is opened or edited
+.github/ISSUE_TEMPLATE/mortality-log.yml  the entry form
 .github/workflows/imagery.yml  twice-daily imagery build -> imagery-data branch
 .github/workflows/keepalive.yml twice-monthly re-enable so GitHub doesn't switch off the schedules
 ```
